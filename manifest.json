@@ -1,0 +1,25 @@
+{
+  "name": "FB Crowdsourcing Toolkit",
+  "version": "1.0",
+  "manifest_version": 2,
+  "background": { "scripts": ["background.js"] },
+  "page_action": {
+    "default_icon": "icon.png",
+    "default_title": "Fetch common names from text"
+  },
+  "permissions": ["tabs", "http://taibif.tw/", "http://lod.tw/", "http://roadkill.tw/"],
+  "web_accessible_resources": [
+    "images/ui-bg_highlight-soft_100_eeeeee_1x100.png",
+    "images/ui-bg_glass_100_f6f6f6_1x400.png",
+    "images/ui-bg_glass_100_fdf5ce_1x400.png",
+    "images/ui-anim_basic_16x16.gif",
+    "images/monotone_close_exit_delete_small.png"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://www.facebook.com/media/*", "*://www.facebook.com/groups/*", "*://www.facebook.com/photo.php*"],
+      "js": ["jquery.js", "spinners.min.js", "tipped.js", "content.js", "jquery-ui.min.js"],
+      "css": ["tipped.css", "jquery-ui.css"]
+    }
+  ]
+}

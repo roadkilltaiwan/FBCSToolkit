@@ -1,0 +1,31 @@
+Please see the header of each program or script for license details
+
+background.js
+Use of this source code is governed by a BSD-style license that can be found in the BSD-LICENSE.txt file.
+Copyright (c) 2011 The Chromium Authors. All rights reserved.
+
+Tipped
+http://projects.nickstakenburg.com/tipped/license
+Copyright (c) 2010-2012 Nick Stakenburg
+
+Spinners 3.0.0
+Spinners is freely distributable under the terms of an MIT-style license.
+Copyright (c) 2010-2012 Nick Stakenburg - http://www.nickstakenburg.com
+GitHub: http://github.com/staaky/spinners
+
+
+jQuery v1.7.2
+Dual licensed under the MIT or GPL Version 2 licenses.
+http://jquery.org/license
+Copyright 2011, John Resig
+
+
+jQuery UI - v1.8.22 - 2012-07-24
+Licensed MIT, GPL
+Copyright (c) 2012 jquery-ui_authors
+
+
+
+All others
+GPL3 License
+Copyright (C) 2013 Jason Guan-Shuo Mai
