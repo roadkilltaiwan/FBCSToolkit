@@ -57,6 +57,11 @@ function unsetOid() {
   current_oid = -1;
 }
 
+function OpenInNewTab(url) {
+  var win=window.open(url, '_blank');
+  win.focus();
+}
+
 var bound = new Array();
 function triggerTipForm (oid, tf_tmp) {
   var tf = tf_tmp;
@@ -79,6 +84,20 @@ function triggerTipForm (oid, tf_tmp) {
     document.forms['tipForm_'+oid].x.value = superX;
     document.forms['tipForm_'+oid].y.value = superY;
   });
+
+  $f(document).delegate("a#mapLookup_" + oid, "click", function() {
+    var mapX = document.forms['tipForm_'+oid].x.value;
+    var mapY = document.forms['tipForm_'+oid].y.value;
+    var gMapLink = "https://maps.google.com.tw/maps?q="+mapY+","+mapX;
+    if ((mapX=='')&&(mapY=='')) {
+      alert('沒輸入點位學人看什麼地圖');
+      OpenInNewTab(gMapLink);
+    }
+    else {
+      OpenInNewTab(gMapLink);
+    }
+  });
+
   
   $f(document).delegate("#tipFormSubmit_" + oid, "click", function() {
     //var target = 'http://lod.tw/cs/api.updateBigTable.php';
@@ -443,7 +462,7 @@ function extractAndTip (message, tippedBody, meta, found) {
         tipContent += "<tr><td>授權方式</td><td><input "+authcss+" name='auth' value='"+(((formData.auth=="")&&(meta.hu != 1))?"未授權":formData.auth)+"'><td>姓名標示</td></td><td><input "+bycss+" name='by' value='"+((formData.by=="")?("未授權"+formData.pname):formData.by)+"'></td></tr>";
         tipContent += "<tr><td>標本號</td><td><input "+spidcss+" name='spid' value='"+((formData.spid==undefined)?"":formData.spid)+"'/></td><td>採集編號</td><td><input "+coidcss+" name='coid' value='"+((formData.coid==undefined)?"":formData.coid)+"'/></td></tr>";
         tipContent += "<tr><td>x</td><td><input "+xcss+" name='x' value='"+formData.lng.toString().replace(/'/, '&apos;')+"'/></td><td>y</td><td><input "+ycss+" name='y' value='"+formData.lat.toString().replace(/'/, '&apos;')+"'/></td></tr>";
-        tipContent += "<tr><td>海拔高度</td><td><input name='altitude'/></td><td></td><td><div id='forceXY_"+formData.oid+"'><u>補上XY</u></div></td></tr>";
+        tipContent += "<tr><td>海拔高度</td><td><input name='altitude'/></td><td></td><td><div id='forceXY_"+formData.oid+"'><u>補上XY</u></div><a id='mapLookup_"+formData.oid+"'>我要看地圖</a></td></tr>";
         tipContent += "<tr><td>地名階層</td><td colspan='3'><span id='places_hierarchy_wrap'><select style='overflow-x:visible; width:auto;' id='places_hierarchy_"+meta.oid+"'></select></span></td></tr>";
         tipContent += "<tr><td>地點縣市</td><td><input id='p1_"+meta.oid+"' name='p1' value='"+p1+"'/></td><td>地點鄉鎮</td><td><input id='p2_"+meta.oid+"' name='p2' value='"+p2+"'/></td></tr>";
         tipContent += "<tr><td>地點其他</td><td><input id='p3_"+meta.oid+"' name='p3' value='"+p3.replace(/'/, '&apos;')+"'/></td></tr>";
