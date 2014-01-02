@@ -98,7 +98,24 @@ function triggerTipForm (oid, tf_tmp) {
     }
   });
 
-  
+  $f(document).delegate("div#transformXY_" + oid, "click", function() {
+    //$f(this).parent().next()..value = '';
+    //$f(this).parent().next().children().attr('value', '');
+    var tpwCoords = "";
+    tpwCoord = document.getElementById('xySource_'+oid).value;
+    if (tpwCoord == '') {
+      var tpwTmp = document.forms['tipForm_'+oid].dummy.value.match(/[A-HJ-Z]\d{4}[A-H][A-E]\d{2,4}/);
+      if (tpwTmp != null) {
+        document.getElementById('xySource_'+oid).value = tpwTmp[0];
+      }
+    }
+
+//    var ffss = 5566;
+    transform(oid);
+    //document.forms['tipForm_'+oid].x.value = superX;
+    //document.forms['tipForm_'+oid].y.value = superY;
+  });
+
   $f(document).delegate("#tipFormSubmit_" + oid, "click", function() {
     //var target = 'http://lod.tw/cs/api.updateBigTable.php';
     var target = 'http://'+app_domain+'/cs/api/api.updateBigTable.php';
@@ -462,10 +479,10 @@ function extractAndTip (message, tippedBody, meta, found) {
         tipContent += "<tr><td>授權方式</td><td><input "+authcss+" name='auth' value='"+(((formData.auth=="")&&(meta.hu != 1))?"未授權":formData.auth)+"'><td>姓名標示</td></td><td><input "+bycss+" name='by' value='"+((formData.by=="")?("未授權"+formData.pname):formData.by)+"'></td></tr>";
         tipContent += "<tr><td>標本號</td><td><input "+spidcss+" name='spid' value='"+((formData.spid==undefined)?"":formData.spid)+"'/></td><td>採集編號</td><td><input "+coidcss+" name='coid' value='"+((formData.coid==undefined)?"":formData.coid)+"'/></td></tr>";
         tipContent += "<tr><td>x</td><td><input "+xcss+" name='x' value='"+formData.lng.toString().replace(/'/, '&apos;')+"'/></td><td>y</td><td><input "+ycss+" name='y' value='"+formData.lat.toString().replace(/'/, '&apos;')+"'/></td></tr>";
-        tipContent += "<tr><td>海拔高度</td><td><input name='altitude'/></td><td></td><td><div id='forceXY_"+formData.oid+"'><u>補上XY</u></div><a id='mapLookup_"+formData.oid+"'>我要看地圖</a></td></tr>";
+        tipContent += "<tr><td>海拔高度</td><td><input name='altitude'/></td><td></td><td><div id='forceXY_"+formData.oid+"'><u>補上XY</u></div><a id='mapLookup_"+formData.oid+"'>我要看地圖</a><div id='transformXY_"+formData.oid+"'><u>轉換電力座標</u></div></td></tr>";
         tipContent += "<tr><td>地名階層</td><td colspan='3'><span id='places_hierarchy_wrap'><select style='overflow-x:visible; width:auto;' id='places_hierarchy_"+meta.oid+"'></select></span></td></tr>";
         tipContent += "<tr><td>地點縣市</td><td><input id='p1_"+meta.oid+"' name='p1' value='"+p1+"'/></td><td>地點鄉鎮</td><td><input id='p2_"+meta.oid+"' name='p2' value='"+p2+"'/></td></tr>";
-        tipContent += "<tr><td>地點其他</td><td><input id='p3_"+meta.oid+"' name='p3' value='"+p3.replace(/'/, '&apos;')+"'/></td></tr>";
+        tipContent += "<tr><td>地點其他</td><td><input id='p3_"+meta.oid+"' name='p3' value='"+p3.replace(/'/, '&apos;')+"'/></td><td>電力座標</td><td><input id='xySource_"+formData.oid+"' name='xySource'/></td></tr>";
         tipContent += "<tr><td>備註</td><td colspan='3'><input style='width:97%;' name='remark' value='"+remark.replace(/</, '&lt;').replace(/>/, '&gt;')+"'/></td></tr>";
         tipContent += "<tr><td colspan='4'><textarea name='dummy' style=\"width:97%;height:200px\" readonly>*****此區訊息僅供確認用, 不允許修改亦不會被傳送*****\n"+message+"</textarea></td></tr>";
         tipContent += "<tr><td/><td style='text-align:center;'><div id='tipFormSubmit_"+meta.oid+"'><b><u>送出</u></b></div></td><td style='text-align:center;'><div id='tipFormClose_"+meta.oid+"'><b><u>關閉不送</u></b></div></td><td/></tr>";
