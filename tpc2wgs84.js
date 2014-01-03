@@ -109,14 +109,41 @@ function getFirstChr(oid) {
 
 function transform(oid) {
 
+  var tmpString = document.forms['tipForm_'+oid].dummy.value.toUpperCase();
+  var sysRegex = /TWD67|T67|\(67\)|TWD97|T97|\(97\)/g;
+  var phRegex = /澎湖/;
+  var sysMatch = sysRegex.exec(tmpString);
+  var phMatch = tmpString.match(phRegex);
+  var isTPW = false;
+
   //decide the crsSource
   //var crsSource = document.getElementById('crsSource');
   var sourceEPSG = null;
-  if ( getFirstChr(oid) == 'X' || getFirstChr(oid) == 'Y' ) {
-  	sourceEPSG = 'EPSG:3827'; // T67 TM2 Penghu
+
+  if (sysMatch == null) { // 電力座標
+    isTPW = true;
+    if ( getFirstChr(oid) == 'X' || getFirstChr(oid) == 'Y' ) {
+    	sourceEPSG = 'EPSG:3827'; // T67 TM2 Penghu
+    }
+    else {
+    	sourceEPSG = 'EPSG:3828'; // T67 TM2 Taiwan
+    }
   }
-  else {
-  	sourceEPSG = 'EPSG:3828'; // T67 TM2 Taiwan
+  else if ((sysMatch[sysMatch.length-1] == 'TWD67')||(sysMatch[sysMatch.length-1] == 'T67')||(sysMatch[sysMatch.length-1] == '(67)')) {
+    if (phMatch != null) {
+    	sourceEPSG = 'EPSG:3827'; // T67 TM2 Penghu
+    }
+    else {
+    	sourceEPSG = 'EPSG:3828'; // T67 TM2 Taiwan
+    }
+  }
+  else if ((sysMatch[sysMatch.length-1] == 'TWD97')||(sysMatch[sysMatch.length-1] == 'T97')||(sysMatch[sysMatch.length-1] == '(97)')) {
+    if (phMatch != null) {
+    	sourceEPSG = 'EPSG:3825'; // T97 TM2 Penghu
+    }
+    else {
+    	sourceEPSG = 'EPSG:3826'; // T97 TM2 Taiwan
+    }
   }
   
   var projSource = null;
@@ -135,7 +162,22 @@ function transform(oid) {
   projDest = projHash[destEPSG];
 
   //var pointInput = document.getElementById('xySource');
-  var pointInput = convertTai(oid);
+  if (isTPW) { // 電力座標轉換
+    var pointInput = convertTai(oid);
+  }
+  else {
+    var tm2Coord = "";
+    tm2Coord = document.getElementById('xySource_'+oid).value;
+    if (tm2Coord != "") {
+      var pointInput = tm2Coord;
+    }
+    else {
+      var tm2Regex = /[0-9]{6}([^0-9]+)[0-9]{7}/g;
+      var tm2Match = tm2Regex.exec(tmpString);
+      var pointInput = tm2Match[0].replace(tm2Match[1], ', ');
+      document.getElementById('xySource_'+oid).value = pointInput;
+    }
+  }
     
   if (pointInput) {
     var pointSource = new Proj4js.Point(pointInput);

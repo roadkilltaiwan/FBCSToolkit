@@ -101,7 +101,7 @@ function triggerTipForm (oid, tf_tmp) {
   $f(document).delegate("div#transformXY_" + oid, "click", function() {
     //$f(this).parent().next()..value = '';
     //$f(this).parent().next().children().attr('value', '');
-    var tpwCoords = "";
+    var tpwCoord = "";
     tpwCoord = document.getElementById('xySource_'+oid).value;
     if (tpwCoord == '') {
       var tpwTmp = document.forms['tipForm_'+oid].dummy.value.match(/[A-HJ-Z]\d{4}[A-H][A-E]\d{2,4}/);
@@ -479,10 +479,10 @@ function extractAndTip (message, tippedBody, meta, found) {
         tipContent += "<tr><td>授權方式</td><td><input "+authcss+" name='auth' value='"+(((formData.auth=="")&&(meta.hu != 1))?"未授權":formData.auth)+"'><td>姓名標示</td></td><td><input "+bycss+" name='by' value='"+((formData.by=="")?("未授權"+formData.pname):formData.by)+"'></td></tr>";
         tipContent += "<tr><td>標本號</td><td><input "+spidcss+" name='spid' value='"+((formData.spid==undefined)?"":formData.spid)+"'/></td><td>採集編號</td><td><input "+coidcss+" name='coid' value='"+((formData.coid==undefined)?"":formData.coid)+"'/></td></tr>";
         tipContent += "<tr><td>x</td><td><input "+xcss+" name='x' value='"+formData.lng.toString().replace(/'/, '&apos;')+"'/></td><td>y</td><td><input "+ycss+" name='y' value='"+formData.lat.toString().replace(/'/, '&apos;')+"'/></td></tr>";
-        tipContent += "<tr><td>海拔高度</td><td><input name='altitude'/></td><td></td><td><div id='forceXY_"+formData.oid+"'><u>補上XY</u></div><a id='mapLookup_"+formData.oid+"'>我要看地圖</a><div id='transformXY_"+formData.oid+"'><u>轉換電力座標</u></div></td></tr>";
+        tipContent += "<tr><td>海拔高度</td><td><input name='altitude'/></td><td></td><td><div id='forceXY_"+formData.oid+"'><u>補上XY</u></div><a id='mapLookup_"+formData.oid+"'>我要看地圖</a><div id='transformXY_"+formData.oid+"'><u>轉換管它什麼座標</u></div></td></tr>";
         tipContent += "<tr><td>地名階層</td><td colspan='3'><span id='places_hierarchy_wrap'><select style='overflow-x:visible; width:auto;' id='places_hierarchy_"+meta.oid+"'></select></span></td></tr>";
         tipContent += "<tr><td>地點縣市</td><td><input id='p1_"+meta.oid+"' name='p1' value='"+p1+"'/></td><td>地點鄉鎮</td><td><input id='p2_"+meta.oid+"' name='p2' value='"+p2+"'/></td></tr>";
-        tipContent += "<tr><td>地點其他</td><td><input id='p3_"+meta.oid+"' name='p3' value='"+p3.replace(/'/, '&apos;')+"'/></td><td>電力座標</td><td><input id='xySource_"+formData.oid+"' name='xySource'/></td></tr>";
+        tipContent += "<tr><td>地點其他</td><td><input id='p3_"+meta.oid+"' name='p3' value='"+p3.replace(/'/, '&apos;')+"'/></td><td>其它座標</td><td><input id='xySource_"+formData.oid+"' name='xySource'/></td></tr>";
         tipContent += "<tr><td>備註</td><td colspan='3'><input style='width:97%;' name='remark' value='"+remark.replace(/</, '&lt;').replace(/>/, '&gt;')+"'/></td></tr>";
         tipContent += "<tr><td colspan='4'><textarea name='dummy' style=\"width:97%;height:200px\" readonly>*****此區訊息僅供確認用, 不允許修改亦不會被傳送*****\n"+message+"</textarea></td></tr>";
         tipContent += "<tr><td/><td style='text-align:center;'><div id='tipFormSubmit_"+meta.oid+"'><b><u>送出</u></b></div></td><td style='text-align:center;'><div id='tipFormClose_"+meta.oid+"'><b><u>關閉不送</u></b></div></td><td/></tr>";
@@ -529,7 +529,7 @@ function extractAndTip (message, tippedBody, meta, found) {
 
 var supplMessage = '';
 // 用縮圖搞der
-$f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoRedesignLink, div.photoRedesign, div.fbMainStreamAttachment, div.uiMediaThumb, a.uiMediaThumb", "hover", function(event) {
+$f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoRedesignLink, div.photoRedesign, a.uiMediaThumb, div.fbMainStreamAttachment, div.uiMediaThumb", "hover", function(event) {
   event.stopPropagation();
   var isCtrlPressed = event.ctrlKey;
   if (!isCtrlPressed) {
@@ -539,7 +539,7 @@ $f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoR
   tippedBody = this;
   if (event.type=='mouseenter') {
 
-    if ((this.className.indexOf("photoRedesignLink") != -1)||(this.className.indexOf("photoRedesign") != -1)||(this.className.indexOf("uiMediaThumbImg") != -1)) {
+    if ((this.className.indexOf("photoRedesignLink") != -1)||(this.className.indexOf("photoRedesign") != -1)||(this.className.indexOf("uiMediaThumbImg") != -1)||(this.className.indexOf("uiMediaThumb") != -1)) {
       var tmpPost = this.parentNode;
       while ((tmpPost != null)&&(tmpPost.attributes['role'] == undefined)) {
         tmpPost = tmpPost.parentNode;
@@ -550,26 +550,34 @@ $f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoR
           supplMessage = $f(tmpPost).html().replace(/<abbr[^<]+<\/abbr>/ig,"").replace(/(<[^>]+)>/ig,"");
           // var gg = 5566;
         }
+        else if (tmpPost.attributes['role'].value == 'main') {
+          supplMessage = $f(tmpPost).html().replace(/<abbr[^<]+<\/abbr>/ig,"").replace(/(<[^>]+)>/ig,"");
+        }
       }
     }
 
     //var target = this.parentElement.attributes['ajaxify'].value;
-    if (this.parentNode.attributes['ajaxify'] == undefined) {
-      if (this.parentNode.parentNode.attributes['ajaxify'] == undefined) {
-        if ($f(this).find('a').attr('ajaxify') != undefined) {
-          target = $f(this).find('a').attr('ajaxify');
+    if (this.attributes['ajaxify'] == undefined) {
+      if (this.parentNode.attributes['ajaxify'] == undefined) {
+        if (this.parentNode.parentNode.attributes['ajaxify'] == undefined) {
+          if ($f(this).find('a').attr('ajaxify') != undefined) {
+            target = $f(this).find('a').attr('ajaxify');
+          }
+          else {
+            alert("FB更動顯示結構了, 請聯絡程式設計師修改程式!!");
+            return;
+          }
         }
         else {
-          alert("FB更動顯示結構了, 請聯絡程式設計師修改程式!!");
-          return;
+          target = this.parentNode.parentNode.attributes['ajaxify'].value;
         }
       }
       else {
-        target = this.parentNode.parentNode.attributes['ajaxify'].value;
+        target = this.parentNode.attributes['ajaxify'].value;
       }
     }
     else {
-      target = this.parentNode.attributes['ajaxify'].value;
+      target = this.attributes['ajaxify'].value;
     }
     
     var paramString = target.split('?')[1];
