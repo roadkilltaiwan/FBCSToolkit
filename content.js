@@ -539,7 +539,7 @@ $f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoR
   tippedBody = this;
   if (event.type=='mouseenter') {
 
-    if ((this.className.indexOf("photoRedesignLink") != -1)||(this.className.indexOf("photoRedesign") != -1)||(this.className.indexOf("uiMediaThumbImg") != -1)||(this.className.indexOf("uiMediaThumb") != -1)) {
+    if (false) {
       var tmpPost = this.parentNode;
       while ((tmpPost != null)&&(tmpPost.attributes['role'] == undefined)) {
         tmpPost = tmpPost.parentNode;
@@ -553,6 +553,21 @@ $f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoR
         else if (tmpPost.attributes['role'].value == 'main') {
           supplMessage = $f(tmpPost).html().replace(/<abbr[^<]+<\/abbr>/ig,"").replace(/(<[^>]+)>/ig,"");
         }
+      }
+    }
+    else if ((this.className.indexOf("uiMediaThumb") != -1)||(this.className.indexOf("uiScaledImageContainer") != -1)||(this.className.indexOf("photoRedesignLink") != -1)||(this.className.indexOf("photoRedesign") != -1)||(this.className.indexOf("uiMediaThumbImg") != -1)) {
+      var tmpPost = this.parentNode;
+      while ((tmpPost != null)&&((tmpPost.className == undefined)||(tmpPost.className.indexOf('mainWrapper')==-1))) {
+        tmpPost = tmpPost.parentNode;
+      }
+      if (tmpPost == null) {
+        tmpPost = this.parentNode;
+        while ((tmpPost.className != null)&&((tmpPost.className == undefined)||(tmpPost.className.indexOf('fbTimelinePhotoAlbum')==-1))) {
+          tmpPost = tmpPost.parentNode;
+        }
+      }
+      if (tmpPost != null) {
+        supplMessage = $f(tmpPost).html().replace(/<abbr[^<]+<\/abbr>/ig,"").replace(/(<[^>]+)>/ig,"");
       }
     }
 
