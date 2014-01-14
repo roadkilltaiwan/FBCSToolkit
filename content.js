@@ -479,7 +479,7 @@ function extractAndTip (message, tippedBody, meta, found) {
         tipContent += "<tr><td>授權方式</td><td><input "+authcss+" name='auth' value='"+(((formData.auth=="")&&(meta.hu != 1))?"未授權":formData.auth)+"'><td>姓名標示</td></td><td><input "+bycss+" name='by' value='"+((formData.by=="")?("未授權"+formData.pname):formData.by)+"'></td></tr>";
         tipContent += "<tr><td>標本號</td><td><input "+spidcss+" name='spid' value='"+((formData.spid==undefined)?"":formData.spid)+"'/></td><td>採集編號</td><td><input "+coidcss+" name='coid' value='"+((formData.coid==undefined)?"":formData.coid)+"'/></td></tr>";
         tipContent += "<tr><td>x</td><td><input "+xcss+" name='x' value='"+formData.lng.toString().replace(/'/, '&apos;')+"'/></td><td>y</td><td><input "+ycss+" name='y' value='"+formData.lat.toString().replace(/'/, '&apos;')+"'/></td></tr>";
-        tipContent += "<tr><td>海拔高度</td><td><input name='altitude'/></td><td></td><td><div id='forceXY_"+formData.oid+"'><u>補上XY</u></div><a id='mapLookup_"+formData.oid+"'>我要看地圖</a><div id='transformXY_"+formData.oid+"'><u>轉換管它什麼座標</u></div></td></tr>";
+        tipContent += "<tr><td>海拔高度</td><td><input name='altitude'/></td><td></td><td><div id='forceXY_"+formData.oid+"'><u>補上XY</u></div><a id='mapLookup_"+formData.oid+"'>我要看地圖</a><div id='transformXY_"+formData.oid+"'><u>轉換管它什麼座標</u></div>"+(((meta.post_id==undefined)||(meta.post_id==''))?"":("<a target='_blank' href='http://www.facebook.com/"+meta.post_id+"'>原po呢????(敲碗)</a>"))+"</td></tr>";
         tipContent += "<tr><td>地名階層</td><td colspan='3'><span id='places_hierarchy_wrap'><select style='overflow-x:visible; width:auto;' id='places_hierarchy_"+meta.oid+"'></select></span></td></tr>";
         tipContent += "<tr><td>地點縣市</td><td><input id='p1_"+meta.oid+"' name='p1' value='"+p1+"'/></td><td>地點鄉鎮</td><td><input id='p2_"+meta.oid+"' name='p2' value='"+p2+"'/></td></tr>";
         tipContent += "<tr><td>地點其他</td><td><input id='p3_"+meta.oid+"' name='p3' value='"+p3.replace(/'/, '&apos;')+"'/></td><td>其它座標</td><td><input id='xySource_"+formData.oid+"' name='xySource'/></td></tr>";
@@ -529,7 +529,10 @@ function extractAndTip (message, tippedBody, meta, found) {
 
 var supplMessage = '';
 // 用縮圖搞der
-$f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoRedesignLink, div.photoRedesign, a.uiMediaThumb, div.fbMainStreamAttachment, div.uiMediaThumb", "hover", function(event) {
+$f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoRedesignLink, div.photoRedesign, a.uiMediaThumb, div.fbMainStreamAttachment, div.uiMediaThumb, img.img, div a", "hover", function(event) {
+  if ((this.className != undefined)&&(this.className.indexOf('fbPhotoImage') != -1)) {
+    return;
+  }
   event.stopPropagation();
   var isCtrlPressed = event.ctrlKey;
   if (!isCtrlPressed) {
@@ -567,7 +570,20 @@ $f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoR
         }
       }
       if (tmpPost != null) {
-        supplMessage = $f(tmpPost).html().replace(/<abbr[^<]+<\/abbr>/ig,"").replace(/(<[^>]+)>/ig,"");
+        if ($f(tmpPost).html() != null) {
+          supplMessage = $f(tmpPost).html().replace(/<abbr[^<]+<\/abbr>/ig,"").replace(/(<[^>]+)>/ig,"");
+        }
+      }
+    }
+    else if ((this.className.indexOf("img") != -1)||(this.tagName == 'A')) {
+      tmpPost = this.parentNode;
+      while ((tmpPost != null)&&((tmpPost.className == undefined)||(tmpPost.className.indexOf('userContentWrapper')==-1))) {
+        tmpPost = tmpPost.parentNode;
+      }
+      if (tmpPost != null) {
+        if ($f(tmpPost).html() != null) {
+          supplMessage = $f(tmpPost).html().replace(/<abbr[^<]+<\/abbr>/ig,"").replace(/(<[^>]+)>/ig,"");
+        }
       }
     }
 
