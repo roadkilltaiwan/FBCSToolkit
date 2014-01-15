@@ -1,6 +1,6 @@
 //check the validation of input data
 function getTai(oid){
-  var inputRe = /[A-HJ-Z]\d{4}[A-H][A-E]\d{2,4}/;
+  var inputRe = /[A-HJ-Z]\d{4}[A-H][A-E]\d{2,4}/i;
   var taiSource = document.getElementById('xySource_'+oid).value;
   taiSource = taiSource.toUpperCase();
   var digiChk = taiSource.length;
