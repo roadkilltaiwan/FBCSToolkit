@@ -62,6 +62,11 @@ function OpenInNewTab(url) {
   win.focus();
 }
 
+var oPostURL = '';
+function getFBPostId (oid) {
+}
+
+
 var bound = new Array();
 function triggerTipForm (oid, tf_tmp) {
   var tf = tf_tmp;
@@ -75,6 +80,10 @@ function triggerTipForm (oid, tf_tmp) {
   $f(document).delegate("img.quick_clean_" + oid, "click", function() {
     //$f(this).parent().next()..value = '';
     $f(this).parent().next().children().attr('value', '');
+  });
+
+  $f(document).delegate("#oPost_" + oid, "click", function() {
+    OpenInNewTab(oPostURL);
   });
 
   $f(document).delegate("div#forceXY_" + oid, "click", function() {
@@ -479,7 +488,7 @@ function extractAndTip (message, tippedBody, meta, found) {
         tipContent += "<tr><td>授權方式</td><td><input "+authcss+" name='auth' value='"+(((formData.auth=="")&&(meta.hu != 1))?"未授權":formData.auth)+"'><td>姓名標示</td></td><td><input "+bycss+" name='by' value='"+((formData.by=="")?("未授權"+formData.pname):formData.by)+"'></td></tr>";
         tipContent += "<tr><td>標本號</td><td><input "+spidcss+" name='spid' value='"+((formData.spid==undefined)?"":formData.spid)+"'/></td><td>採集編號</td><td><input "+coidcss+" name='coid' value='"+((formData.coid==undefined)?"":formData.coid)+"'/></td></tr>";
         tipContent += "<tr><td>x</td><td><input "+xcss+" name='x' value='"+formData.lng.toString().replace(/'/, '&apos;')+"'/></td><td>y</td><td><input "+ycss+" name='y' value='"+formData.lat.toString().replace(/'/, '&apos;')+"'/></td></tr>";
-        tipContent += "<tr><td>海拔高度</td><td><input name='altitude'/></td><td></td><td><div id='forceXY_"+formData.oid+"'><u>補上XY</u></div><a id='mapLookup_"+formData.oid+"'>我要看地圖</a><div id='transformXY_"+formData.oid+"'><u>轉換管它什麼座標</u></div>"+(((meta.post_id==undefined)||(meta.post_id=='')||(meta.post_id==null))?"":("<a target='_blank' href='http://www.facebook.com/"+meta.post_id+"'>原po呢????(敲碗)</a>"))+"</td></tr>";
+        tipContent += "<tr><td>海拔高度</td><td><input name='altitude'/></td><td></td><td><div id='forceXY_"+formData.oid+"'><u>補上XY</u></div><a id='mapLookup_"+formData.oid+"'>我要看地圖</a><div id='transformXY_"+formData.oid+"'><u>轉換管它什麼座標</u></div><a id='oPost_"+formData.oid+"'>原po呢????(敲碗)</a></td></tr>";
         tipContent += "<tr><td>地名階層</td><td colspan='3'><span id='places_hierarchy_wrap'><select style='overflow-x:visible; width:auto;' id='places_hierarchy_"+meta.oid+"'></select></span></td></tr>";
         tipContent += "<tr><td>地點縣市</td><td><input id='p1_"+meta.oid+"' name='p1' value='"+p1+"'/></td><td>地點鄉鎮</td><td><input id='p2_"+meta.oid+"' name='p2' value='"+p2+"'/></td></tr>";
         tipContent += "<tr><td>地點其他</td><td><input id='p3_"+meta.oid+"' name='p3' value='"+p3.replace(/'/, '&apos;')+"'/></td><td>其它座標</td><td><input id='xySource_"+formData.oid+"' name='xySource'/></td></tr>";
@@ -760,7 +769,8 @@ $f(document).delegate("img#fbPhotoImage", "hover", function(event) {
       message_tmp = $f('div.fbPhotoContributor').html().replace(/<abbr[^<]+<\/abbr>/ig,"");
       message = message_tmp.replace(/<[^>]+>/ig,"");
       message.replace(/'四處爬爬走(路殺社, Reptile Road Mortality)'/, "");
-      var oid = this.src.split('_')[1];
+      //var oid = this.src.split('_')[1];
+      var oid = document.location.href.match(/fbid=(\d+)/)[1];
       var picture = this.src.split('?')[0];
       //var picture = ''; // 待補
       var pname = $f('div#fbPhotoPageAuthorName a').html().replace(/(<[^>]+)>/ig,"");
@@ -785,9 +795,6 @@ $f(document).delegate("img#fbPhotoImage", "hover", function(event) {
         $tmpAbbr = $meself.find('abbr');
       }
       var ctime = $tmpAbbr[0].attributes['data-utime'].value;
-      
-      
-            
       var stime = null;
       var cname = '';
       var sname = '';
@@ -826,7 +833,7 @@ $f(document).delegate("img#fbPhotoImage", "hover", function(event) {
       var lat = null;
       var lng = null;
     }
-    
+
     tippedBody = this;
     if ($f(document).find("div#tip_"+oid).length == 0) {
       Tipped.create($f(tippedBody), "<div id='tip_"+oid+"'>Loading</div>", {onHide:unsetOid, target:'rigthtop', tooltip:'lefttop', fixed:true, closeButton: true, hideOn:false, showOn:false, closeButton:true});
@@ -857,7 +864,64 @@ $f(document).delegate("img#fbPhotoImage", "hover", function(event) {
             data = {oid:oid, pid:pid, pname:pname, ctime:ctime, picture:picture, needMore:1};
             var found = false;
           }
-          extractAndTip(message, tippedBody, data, found);
+          $f.get("http://www.facebook.com/" + oid, {}, function (oData, oStatus, oXHR) {
+            gmRegex = /set=gm\.(\d+)/;
+            gmMatch = gmRegex.exec(oData);
+            if (gmMatch != null) {
+              // return gmMatch[1];
+              oPostURL = "https://www.facebook.com/"+gmMatch[1];
+
+              // 在下面這行前面加上//註解可改為抓原post內容的版本
+              extractAndTip(message, tippedBody, data, found); /*
+                
+              $f.get(oPostURL, {}, function (oPostData, oPostStatus, oPostXHR) {
+                message = message + "\n=====以下資訊抓自原post=====";
+                var ffss = 'we are 56';
+                
+                codeRegex = /\<code.+?\<\/code\>/g;
+                codeMatch = oPostData.match(codeRegex);
+                codeTmp = "";
+                for (ci = 0; ci < codeMatch.length; ci++) {
+                  if (codeMatch[ci].match(/userContentWrapper/) != null) {
+                    codeTmp = codeMatch[ci].replace(/<[^>]+>/ig,"");
+                    break; 
+                  }
+                }
+                if (codeTmp != "") {
+                  message = message + "\n" + codeTmp;
+                }
+
+                bigPipeRegex = /bigPipe\.onPageletArrive\(.+?\)\<\/script\>/g;
+                bigPipeMatch = oPostData.match(bigPipeRegex); 
+                for (oi = 0; oi < bigPipeMatch.length; oi++) {
+                  if (bigPipeMatch[oi].match(/"comments"\:/) != null) {
+                    commentsObjTmp = $f.parseJSON(bigPipeMatch[oi].split('bigPipe.onPageletArrive(')[1].split(")</script>")[0]);
+                    commentsObj = commentsObjTmp.jsmods;
+                    break; 
+                  }
+                }
+                for (var a=0; a<commentsObj.instances.length; a++) {
+                  if (commentsObj.instances[a] != undefined)
+                  for (var b=0; b<commentsObj.instances[a].length; b++) {
+                    if (commentsObj.instances[a][b] != undefined)
+                    for (var c=0; c<commentsObj.instances[a][b].length; c++) {
+                      if (commentsObj.instances[a][b][c] != undefined)
+                      if (commentsObj.instances[a][b][c].comments != undefined) {
+                        for (var d=0; d<commentsObj.instances[a][b][c].comments.length; d++) {
+                          message = message + "\n" + commentsObj.instances[a][b][c].comments[d].body.text;
+                        }
+                      }
+                    }
+                  }
+                }
+                //message_tmp = $f(data).find("span.fbPhotosPhotoCaption").html().replace(/<abbr[^<]+<\/abbr>/ig,"");
+                //postMessage = message_tmp.replace(/<[^>]+>/ig,"");
+                extractAndTip(message, tippedBody, data, found);
+              });
+              //*/
+              
+            }
+          });
         }
       );
 //    }
