@@ -921,6 +921,9 @@ $f(document).delegate("img#fbPhotoImage", "hover", function(event) {
               //*/
               
             }
+            else {
+              extractAndTip(message, tippedBody, data, found);
+            }
           });
         }
       );
