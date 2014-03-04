@@ -162,6 +162,7 @@ function triggerTipForm (oid, tf_tmp) {
       remark:document.forms['tipForm_'+oid].remark.value,
       hu:document.forms['tipForm_'+oid].humanUpdated.value,
       activity:document.forms['tipForm_'+oid].activity.value,
+      archive:document.forms['tipForm_'+oid].toTaiRON.checked
     };
     $f.post(target, sdata, function (rdata, status, xhr) {
       // reset all tips
@@ -312,8 +313,17 @@ function extractAndTip (message, tippedBody, meta, found) {
         formData.alt = '';
         formData.rk = 'checked';
         formData.actOpts = actOpts;
+        formData.toTaiRON = 'checked';
       }      
       else if (found) {
+
+        if (meta.toTaiRON == 1) {
+          formData.toTaiRON = 'checked';
+        }
+        else {
+          formData.toTaiRON = '';
+        }
+        
       
         if (meta.actOpts != '') { 
           formData.actOpts = actOpts  + "<option value='"+meta.actOpts+"' selected>"+meta.actOpts+"</option>";
@@ -484,7 +494,7 @@ function extractAndTip (message, tippedBody, meta, found) {
         tipContent += "<tr><td>物種二<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+cname2css+" name='cname2' value='"+formData.cname2+"'></td><td>學名2<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+sname2css+" name='sname2' value='"+formData.sname2+"'></td></tr>";
         tipContent += "<tr><td>物種三<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+cname3css+" name='cname3' value='"+formData.cname3+"'></td><td>學名3<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+sname3css+" name='sname3' value='"+formData.sname3+"'></td></tr>";
         tipContent += "<tr><td>已鑑定</td><td><input type='checkbox' name='tiw' "+formData.tiw+"></td><td>是否路死</td><td><input type='checkbox' name='rk' "+formData.rk+"/></td></tr>";
-        tipContent += "<tr><td>是否需要後續人工補充更新</td><td><input name='needMore' type='checkbox' "+formData.needMore+" /></td></tr>";
+        tipContent += "<tr><td>是否需要後續人工補充更新</td><td><input name='needMore' type='checkbox' "+formData.needMore+" /></td><td>是否需要進TaiRON</td><td><input name='toTaiRON' type='checkbox' "+formData.toTaiRON+" /></td></tr>";
         tipContent += "<tr><td>授權方式</td><td><input "+authcss+" name='auth' value='"+(((formData.auth=="")&&(meta.hu != 1))?"未授權":formData.auth)+"'><td>姓名標示</td></td><td><input "+bycss+" name='by' value='"+((formData.by=="")?("未授權"+formData.pname):formData.by)+"'></td></tr>";
         tipContent += "<tr><td>標本號</td><td><input "+spidcss+" name='spid' value='"+((formData.spid==undefined)?"":formData.spid)+"'/></td><td>採集編號</td><td><input "+coidcss+" name='coid' value='"+((formData.coid==undefined)?"":formData.coid)+"'/></td></tr>";
         tipContent += "<tr><td>x</td><td><input "+xcss+" name='x' value='"+formData.lng.toString().replace(/'/, '&apos;')+"'/></td><td>y</td><td><input "+ycss+" name='y' value='"+formData.lat.toString().replace(/'/, '&apos;')+"'/></td></tr>";
