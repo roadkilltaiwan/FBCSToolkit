@@ -569,11 +569,11 @@ $f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoR
       if ((tmpPost != null)&&(tmpPost.attributes['role'] != undefined)) {
         if (tmpPost.attributes['role'].value == 'article') {
           // $f(data).find("span.fbPhotosPhotoCaption").html().replace(/<abbr[^<]+<\/abbr>/ig,"");
-          supplMessage = $f(tmpPost).html().replace(/<abbr[^<]+<\/abbr>/ig,"").replace(/(<[^>]+)>/ig,"");
+          supplMessage = removePartialTag($f(tmpPost).html()).replace(/<abbr[^<]+<\/abbr>/ig,"").replace(/(<[^>]+)>/ig,"");
           // var gg = 5566;
         }
         else if (tmpPost.attributes['role'].value == 'main') {
-          supplMessage = $f(tmpPost).html().replace(/<abbr[^<]+<\/abbr>/ig,"").replace(/(<[^>]+)>/ig,"");
+          supplMessage = removePartialTag($f(tmpPost).html()).replace(/<abbr[^<]+<\/abbr>/ig,"").replace(/(<[^>]+)>/ig,"");
         }
       }
     }
@@ -590,7 +590,7 @@ $f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoR
       }
       if (tmpPost != null) {
         if ($f(tmpPost).html() != null) {
-          supplMessage = $f(tmpPost).html().replace(/<abbr[^<]+<\/abbr>/ig,"").replace(/(<[^>]+)>/ig,"");
+          supplMessage = removePartialTag($f(tmpPost).html()).replace(/<abbr[^<]+<\/abbr>/ig,"").replace(/(<[^>]+)>/ig,"");
         }
       }
     }
@@ -601,7 +601,7 @@ $f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoR
       }
       if (tmpPost != null) {
         if ($f(tmpPost).html() != null) {
-          supplMessage = $f(tmpPost).html().replace(/<abbr[^<]+<\/abbr>/ig,"").replace(/(<[^>]+)>/ig,"");
+          supplMessage = removePartialTag($f(tmpPost).html()).replace(/<abbr[^<]+<\/abbr>/ig,"").replace(/(<[^>]+)>/ig,"");
         }
       }
     }
@@ -660,7 +660,7 @@ $f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoR
           }
         }
         
-        message_tmp = $f(data).find("span.fbPhotosPhotoCaption").html().replace(/<abbr[^<]+<\/abbr>/ig,"");
+        message_tmp = removePartialTag($f(data).find("span.fbPhotosPhotoCaption").html()).replace(/<abbr[^<]+<\/abbr>/ig,"");
         postMessage = message_tmp.replace(/<[^>]+>/ig,"");
         
         message = postMessage + message + supplMessage;
@@ -689,7 +689,7 @@ $f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoR
           oid = this.url.split('_')[2];
         }
 */        
-        var pname = $f(data).find("div#fbPhotoPageAuthorName a").html().replace(/(<[^>]+)>/ig,"");
+        var pname = removePartialTag($f(data).find("div#fbPhotoPageAuthorName a").html()).replace(/(<[^>]+)>/ig,"");
         if ($f(data).find("div#fbPhotoPageAuthorName a").attr('href').indexOf('=') != -1) {
           var pid = $f(data).find("div#fbPhotoPageAuthorName a").attr('href').split('=')[1];
         }
@@ -763,6 +763,48 @@ $f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoR
   }
 });
 
+function removePartialTag (str) {
+  var len = str.length;
+  var isPair = true;
+  var inQuote = false;
+  var cleanStr = "";
+  for (i=0; i<len; i++) {
+    if (str[i] == '"') {
+      if (!isPair) {
+        inQuote = ! inQuote;
+      }
+      cleanStr += str[i];
+    }
+    if (isPair) {
+      if (str[i] == '<') {
+        if (!inQuote) {
+          isPair = false;
+          cleanStr += str[i];
+        }
+      }
+      else if (str[i] == '>'){
+      }
+      else {
+        cleanStr += str[i];
+      }
+    }
+    else if (!isPair) {
+      if (str[i] == '>') {
+        if (!inQuote) {
+          cleanStr += str[i];
+          isPair = true;
+        }
+      }
+      else if (str[i] == '<') {
+      }
+      else {
+        cleanStr += str[i];
+      }
+    }
+  }
+  return cleanStr;
+}
+
 // 不處理spotlight的情況可能會簡單一點
 // $f(document).delegate("img.spotlight, img#fbPhotoImage", "hover", function(event) {
 $f(document).delegate("img#fbPhotoImage", "hover", function(event) {
@@ -776,14 +818,14 @@ $f(document).delegate("img#fbPhotoImage", "hover", function(event) {
   if (event.type=='mouseenter') {
     // check element and class
     if (this.className.indexOf('fbPhotoImage') != -1 ) {
-      message_tmp = $f('div.fbPhotoContributor').html().replace(/<abbr[^<]+<\/abbr>/ig,"");
+      message_tmp = removePartialTag($f('div.fbPhotoContributor').html()).replace(/<abbr[^<]+<\/abbr>/ig,"");
       message = message_tmp.replace(/<[^>]+>/ig,"");
       message.replace(/'四處爬爬走(路殺社, Reptile Road Mortality)'/, "");
       //var oid = this.src.split('_')[1];
       var oid = document.location.href.match(/fbid=(\d+)/)[1];
       var picture = this.src.split('?')[0];
       //var picture = ''; // 待補
-      var pname = $f('div#fbPhotoPageAuthorName a').html().replace(/(<[^>]+)>/ig,"");
+      var pname = removePartialTag($f('div#fbPhotoPageAuthorName a').html()).replace(/(<[^>]+)>/ig,"");
       if ($f('div#fbPhotoPageAuthorName a').attr('href').indexOf('=') != -1) {
         var pid = $f('div#fbPhotoPageAuthorName a').attr('href').split('=')[1];
       }
@@ -818,12 +860,12 @@ $f(document).delegate("img#fbPhotoImage", "hover", function(event) {
       var lng = null;
     }
     else if (this.className.indexOf('spotlight') != -1 ) {
-      message_tmp = $f('form.fbPhotosSnowliftFeedbackForm').html().replace(/<abbr[^<]+<\/abbr>/ig,"");
+      message_tmp = removePartialTag($f('form.fbPhotosSnowliftFeedbackForm').html()).replace(/<abbr[^<]+<\/abbr>/ig,"");
       message = message_tmp.replace(/<[^>]+>/ig,"");
       message.replace(/'四處爬爬走(路殺社, Reptile Road Mortality)'/, "");
       var oid = this.src.split('_')[1];
       var picture = this.src.split('?')[0];
-      var pname = $f('div#fbPhotoSnowliftAuthorName a').html().replace(/(<[^>]+)>/ig,"");
+      var pname = removePartialTag($f('div#fbPhotoSnowliftAuthorName a').html()).replace(/(<[^>]+)>/ig,"");
       if ($f('div#fbPhotoSnowliftAuthorName a').attr('href').indexOf('=') != -1) {
         var pid = $f('div#fbPhotoSnowliftAuthorName a').attr('href').split('=')[1];
       }
