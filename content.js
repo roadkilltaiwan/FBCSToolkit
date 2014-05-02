@@ -664,7 +664,7 @@ $f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoR
         postMessage = message_tmp.replace(/<[^>]+>/ig,"");
         
         message = postMessage + message + supplMessage;
-        message.replace(/'四處爬爬走(路殺社, Reptile Road Mortality)'/, "");
+        message = message.replace(/四處爬爬走(路殺社, Reptile Road Mortality)/, "");
         
         var picture = $f(data).find("img.fbPhotoImage").attr('src').split('?')[0];
 
@@ -691,7 +691,7 @@ $f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoR
 */        
         var pname = removePartialTag($f(data).find("div#fbPhotoPageAuthorName a").html()).replace(/(<[^>]+)>/ig,"");
         if ($f(data).find("div#fbPhotoPageAuthorName a").attr('href').indexOf('=') != -1) {
-          var pid = $f(data).find("div#fbPhotoPageAuthorName a").attr('href').split('=')[1];
+          var pid = $f(data).find("div#fbPhotoPageAuthorName a").attr('href').split('=')[1].split('&')[0];
         }
         else {
           var pid = $f(data).find("div#fbPhotoPageAuthorName a").attr('href').split('/').pop();
@@ -773,7 +773,7 @@ function removePartialTag (str) {
       if (!isPair) {
         inQuote = ! inQuote;
       }
-      cleanStr += str[i];
+      // cleanStr += str[i];
     }
     if (isPair) {
       if (str[i] == '<') {
@@ -820,14 +820,14 @@ $f(document).delegate("img#fbPhotoImage", "hover", function(event) {
     if (this.className.indexOf('fbPhotoImage') != -1 ) {
       message_tmp = removePartialTag($f('div.fbPhotoContributor').html()).replace(/<abbr[^<]+<\/abbr>/ig,"");
       message = message_tmp.replace(/<[^>]+>/ig,"");
-      message.replace(/'四處爬爬走(路殺社, Reptile Road Mortality)'/, "");
+      message = message.replace(/四處爬爬走(路殺社, Reptile Road Mortality)/, "");
       //var oid = this.src.split('_')[1];
       var oid = document.location.href.match(/fbid=(\d+)/)[1];
       var picture = this.src.split('?')[0];
       //var picture = ''; // 待補
       var pname = removePartialTag($f('div#fbPhotoPageAuthorName a').html()).replace(/(<[^>]+)>/ig,"");
       if ($f('div#fbPhotoPageAuthorName a').attr('href').indexOf('=') != -1) {
-        var pid = $f('div#fbPhotoPageAuthorName a').attr('href').split('=')[1];
+        var pid = $f('div#fbPhotoPageAuthorName a').attr('href').split('=')[1].split('&')[0];
       }
       else {
         var pid = $f('div#fbPhotoPageAuthorName a').attr('href').split('/').pop();
@@ -862,12 +862,12 @@ $f(document).delegate("img#fbPhotoImage", "hover", function(event) {
     else if (this.className.indexOf('spotlight') != -1 ) {
       message_tmp = removePartialTag($f('form.fbPhotosSnowliftFeedbackForm').html()).replace(/<abbr[^<]+<\/abbr>/ig,"");
       message = message_tmp.replace(/<[^>]+>/ig,"");
-      message.replace(/'四處爬爬走(路殺社, Reptile Road Mortality)'/, "");
+      message = message.replace(/四處爬爬走(路殺社, Reptile Road Mortality)/, "");
       var oid = this.src.split('_')[1];
       var picture = this.src.split('?')[0];
       var pname = removePartialTag($f('div#fbPhotoSnowliftAuthorName a').html()).replace(/(<[^>]+)>/ig,"");
       if ($f('div#fbPhotoSnowliftAuthorName a').attr('href').indexOf('=') != -1) {
-        var pid = $f('div#fbPhotoSnowliftAuthorName a').attr('href').split('=')[1];
+        var pid = $f('div#fbPhotoSnowliftAuthorName a').attr('href').split('=')[1].split('&')[0];
       }
       else {
         var pid = $f('div#fbPhotoSnowliftAuthorName a').attr('href').split('/').pop();
