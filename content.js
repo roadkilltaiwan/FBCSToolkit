@@ -13,19 +13,52 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  along with this program.  If not, see <//www.gnu.org/licenses/>.
 */
 
 var app_domain = "roadkill.tw";
 var app_group = 238918712815615;
+var app_context = "cs";
 
 var actOpts = "<option value=''>無</option>"; // 這行是重要的開頭, 不要更動 
-actOpts += "<option value='2013夏季蛇類大調查'>2013夏季蛇類大調查</option>";
-actOpts += "<option value='2013端午節蛇類調查'>2013端午節蛇類調查</option>";
-actOpts += "<option value='2013日月潭大泡茶'>2013日月潭大泡茶</option>";
+actOpts += "<option value='2014端午節蛇類調查'>2014端午節蛇類調查</option>";
 // 直接刪除單行或在行前加上兩個斜線以移除單行, 例如此行與以下二行
 // 下面這行是參考範例與說明
 // actOpts += "<option value='會存進資料庫的內容'>會顯示在小工具選單裡的內容</option>";
+
+var profOpts = "<option value=''>無</option>";
+
+function profSelected (dop) {
+  var selected_profile = '';
+  chrome.runtime.sendMessage({query: "get"}, function(response) {
+    selected_profile = response.selected_profile;
+    setProfile(selected_profile);
+    runTheFlow(dop);
+  });
+}
+
+function setProfile (val) {
+  chrome.runtime.sendMessage({query: "set", selected_profile: val}, function(response) { return; });
+  selected_profile = val;
+  switch(selected_profile) {
+    case 'rk':
+      profOpts = "<option value='rk' selected>路殺社</option>"; 
+      profOpts += "<option value='dbf'>端午節蛇類調查</option>";
+      app_domain = "roadkill.tw";
+      app_group = 238918712815615;
+      app_context = "cs";
+            
+      break;
+    case 'dbf':
+      profOpts = "<option value='rk'>路殺社</option>"; 
+      profOpts += "<option value='dbf' selected>端午節蛇類調查</option>";
+      app_domain = "roadkill.tw";
+      app_group = 177775625714412;
+      app_context = "dbf";
+            
+      break;
+  }    
+}
 
 var userInput = "";
 var content = "";
@@ -69,6 +102,10 @@ function getFBPostId (oid) {
 
 var bound = new Array();
 function triggerTipForm (oid, tf_tmp) {
+
+//  $f("#profile_select_" + oid).html(profOpts);
+//  $f("#server_" + oid).html("//" + app_domain + "/" + app_context);
+  
   var tf = tf_tmp;
   if (bound.indexOf(oid)!=-1) {
     return;
@@ -97,7 +134,7 @@ function triggerTipForm (oid, tf_tmp) {
   $f(document).delegate("a#mapLookup_" + oid, "click", function() {
     var mapX = document.forms['tipForm_'+oid].x.value;
     var mapY = document.forms['tipForm_'+oid].y.value;
-    var gMapLink = "https://maps.google.com.tw/maps?q="+mapY+","+mapX;
+    var gMapLink = "//maps.google.com.tw/maps?q="+mapY+","+mapX;
     if ((mapX=='')&&(mapY=='')) {
       alert('沒輸入點位學人看什麼地圖');
       OpenInNewTab(gMapLink);
@@ -126,14 +163,14 @@ function triggerTipForm (oid, tf_tmp) {
   });
 
   $f(document).delegate("#tipFormSubmit_" + oid, "click", function() {
-    //var target = 'http://lod.tw/cs/api.updateBigTable.php';
-    var target = 'http://'+app_domain+'/cs/api/api.updateBigTable.php';
+    
+    var target = '//'+app_domain+'/'+app_context+'/api/api.updateBigTable.php';
     var formalizedDateTime = new Date(document.forms['tipForm_'+oid].ctime_int.value * 1000); // to milliseconds
     var formalizedDateTimeString = formalizedDateTime.toISOString().split('T')[0] + " " + formalizedDateTime.toISOString().split('T')[1].split('.')[0];
 
     var sdata = {
       photo_id:oid,
-      link:"http://www.facebook.com/photo.php?fbid="+oid,
+      link:"//www.facebook.com/photo.php?fbid="+oid,
       picture:document.forms['tipForm_'+oid].picture.value,
       created_time:formalizedDateTimeString,
       shot_date:(document.forms['tipForm_'+oid].stime.value == '')?'0000-00-00':document.forms['tipForm_'+oid].stime.value,
@@ -195,12 +232,11 @@ var formData = {
 };
 
 function extractAndTip (message, tippedBody, meta, found) {
-
     var sid = "#places_hierarchy_" + meta.oid;
     if (($f(sid).html()==null)||($f(sid).html()=="")) {
       if ((placeXHR == undefined)||(placeXHR.state() != 'pending')) {
         placeXHR = $f.post(
-          "http://"+app_domain+"/cs/api/api.getNames.php",
+          "//"+app_domain+"/"+app_context+"/api/api.getNames.php",
           {text:message, fastMode:0, withContext:'true'},
           function (data, textStatus, jqXHR) {
             var places = new Array();
@@ -256,11 +292,11 @@ function extractAndTip (message, tippedBody, meta, found) {
   }
 
   $f.post(
-    //'http://lod.tw/cs/api.single_record.php',
-    'http://'+app_domain+'/cs/api/api.single_record.php',
+    //'//lod.tw/cs/api.single_record.php',
+    '//'+app_domain+'/'+app_context+'/api/api.single_record.php',
     {message:message, group:app_group, username:meta.pid},
     function (data, textStatus, jqXHR) {
-    
+
       formData.oid = meta.oid;
       formData.pname = meta.pname;
       formData.pid = meta.pid;
@@ -443,7 +479,13 @@ function extractAndTip (message, tippedBody, meta, found) {
         formData.lng = parseFloat(x);
         if (isNaN(formData.lng)) {
           formData.lng = '';
-        } 
+        }
+        
+        var pidcss = "";
+        if (meta.pid_conflict) {
+          var pidcss = " style='background:pink;' ";
+        }
+         
         var xcss = "";
         if ((parseFloat(nfx) != parseFloat(x))&&(meta.hu != 1)) {
           formData.lng = ((nfx == undefined)||(nfx == ''))?x:nfx;
@@ -485,10 +527,11 @@ function extractAndTip (message, tippedBody, meta, found) {
       //var tipContent = "<form><table><tr><td>"+oid+"</td></tr><tr><td>"+authorName+"</td></tr><tr><td>"+authorId+"</td></tr><tr><td>"+data['match']+"</td></tr><tr><td>"+oid+"</td></tr><tr><td>"+oid+"</td></tr></table></form>";
       if (($f("#tipForm_"+meta.oid).html()==null)||(meta.oid != current_oid)) {
         var tipContent = "<form id='tipForm_"+formData.oid+"'><table>";
+        tipContent += "<tr><td><h3 style='color:white;'>Profile</h3></td><td><select id='profile_select_"+formData.oid+"' style='overflow-x:visible; width:auto;' name='profile' id='profOpts'>"+profOpts+"</select></td><td><div id='server_"+formData.oid+"'>"+app_domain+"/"+app_context+"</div></td></tr>";
         tipContent += "<tr><td><h2 style='color:white;'>資料庫中"+title+"標記照片ID</h2></td><td><input name='oid' value='"+formData.oid+"'></td><td>特殊活動</td><td><select style='overflow-x:visible; width:auto;' name='activity'>"+formData.actOpts+"</select></td></tr>";
         tipContent += "<tr><td>上傳日期</td><td><input type='text' name='ctime' value='"+formData.ctime+"'></td>";
         tipContent += "<td>拍攝日期</td><td><input type='date' name='stime' value='"+formData.stime+"'></td></tr>";
-        tipContent += "<tr><td>上傳者ID</td><td><input name='authorId' value='"+formData.pid+"'></td>";
+        tipContent += "<tr><td>上傳者ID</td><td><input "+pidcss+" name='authorId' value='"+formData.pid+"'></td>";
         tipContent += "<td>上傳者代號</td><td><input name='authorName' value='"+formData.pname+"'></td></tr>";
         tipContent += "<tr><td>物種一<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+cname1css+" name='cname1' value='"+formData.cname1+"'></td><td>學名1<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+sname1css+" name='sname1' value='"+formData.sname1+"'></td></tr>";
         tipContent += "<tr><td>物種二<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+cname2css+" name='cname2' value='"+formData.cname2+"'></td><td>學名2<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+sname2css+" name='sname2' value='"+formData.sname2+"'></td></tr>";
@@ -533,7 +576,16 @@ function extractAndTip (message, tippedBody, meta, found) {
             }              
           }
         );
+        $f("#profile_select_"+meta.oid).change(
+          function () {
+            var oid = this.id.split('_').pop();
+            setProfile(this.options[this.selectedIndex].value);
+            current_oid = -1;
+            Tipped.hide($f(tippedBody));
+          }
+        );
       }
+
       Tipped.refresh($f(tippedBody), {target:'rigthtop', tooltip:'lefttop'});
       triggerTipForm(meta.oid, tippedBody);
       current_oid = meta.oid;      
@@ -560,7 +612,7 @@ $f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoR
   supplMessage = '';
   tippedBody = this;
   if (event.type=='mouseenter') {
-
+    
     if (false) {
       var tmpPost = this.parentNode;
       while ((tmpPost != null)&&(tmpPost.attributes['role'] == undefined)) {
@@ -636,7 +688,7 @@ $f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoR
       var param = paramVals[c].split('=')[0];
       var val = paramVals[c].split('=')[1];
       if (param == 'fbid') {
-        target = "http://www.facebook.com/photo.php?fbid=" + val; 
+        target = "//www.facebook.com/photo.php?fbid=" + val; 
       }
     }
     
@@ -690,12 +742,7 @@ $f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoR
         }
 */        
         var pname = removePartialTag($f(data).find("div#fbPhotoPageAuthorName a").html()).replace(/(<[^>]+)>/ig,"");
-        if ($f(data).find("div#fbPhotoPageAuthorName a").attr('href').indexOf('=') != -1) {
-          var pid = $f(data).find("div#fbPhotoPageAuthorName a").attr('href').split('=')[1].split('&')[0];
-        }
-        else {
-          var pid = $f(data).find("div#fbPhotoPageAuthorName a").attr('href').split('/').pop();
-        }
+        var pid = $f(data).find("div#fbPhotoPageAuthorName a").attr('data-hovercard').split('id=').pop();
         // var ctime = $f(data).find("abbr")[0].attributes['data-utime'].value;
         var $tmpAbbr = $f(tippedBody).find('abbr');
         var $meself = $f(tippedBody);
@@ -729,39 +776,78 @@ $f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoR
         }
         Tipped.show($f(tippedBody));
         
-        if ((xhr == undefined)||(xhr.state() != 'pending')||(oid != current_oid)) {
-          xhr = $f.getJSON(
-            //"http://lod.tw/cs/api.findFBObj.php",
-            "http://"+app_domain+"/cs/api/api.findFBObj.php",
-            {
-              oid:  oid
-            },
-            function(data, textStatus, jqXHR) {
-              if (data) {
-                data.ctime = ctime;
-                //Do something with the data
-                //message = '5566bingo';
-                var found = true;
-                if (data.picture == '') {
-                  if (picture != '') {
-                    data.picture = picture;
-                  }
-                }
-              }
-              else {
-                // do something with message;
-                // alert(doSomething);
-                data = {oid:oid, pid:pid, pname:pname, ctime:ctime, picture:picture, needMore:1};
-                var found = false;
-              }
-              extractAndTip(message, tippedBody, data, found);
-            }
-          );
-        }        
+        var dop = {init: true};
+        dop.oid = oid;
+        dop.ctime = ctime;
+        dop.picture = picture;
+        dop.message = message;
+        dop.pid = pid;
+        dop.pname = pname;
+        dop.tippedBody = tippedBody;
+        dop.go = false;
+
+        profSelected (dop);
+
       }
     );
   }
 });
+
+function runTheFlow (dop /*dataOnPage*/) {
+  if ((xhr == undefined)||(xhr.state() != 'pending')||(dop.oid != current_oid)||dop.go) {
+    xhr = $f.getJSON(
+      //"//lod.tw/cs/api.findFBObj.php",
+      "//"+app_domain+"/"+app_context+"/api/api.findFBObj.php",
+      {
+        oid:  dop.oid
+      },
+      function(data, textStatus, jqXHR) {
+        if (data) {
+          //Do something with the data
+          //message = '5566bingo';
+          data.ctime = dop.ctime;
+          var found = true;
+          if (data.picture == '') {
+            if (dop.picture != '') {
+              data.picture = dop.picture;
+            }
+          }
+          if (data.pid != dop.pid) {
+            data.pid = "留下正確的pid:" + data.pid + "或" + dop.pid;
+            data.pid_conflict = true;
+          }
+          else {
+            data.pid_conflict = false;
+          }            
+        }
+        else {
+          // do something with message;
+          // alert(doSomething);
+          data = {oid:dop.oid, pid:dop.pid, pname:dop.pname, ctime:dop.ctime, picture:dop.picture, needMore:1, pid_conflict:false};
+          var found = false;
+        }
+        if (dop.go) {
+          $f.get("//www.facebook.com/" + dop.oid, {}, function (oData, oStatus, oXHR) {
+            gmRegex = /set=gm\.(\d+)/;
+            gmMatch = gmRegex.exec(oData);
+            if (gmMatch != null) {
+              oPostURL = "//www.facebook.com/"+gmMatch[1];
+              // return gmMatch[1];
+              // 在下面這行前面加上//註解可改為抓原post內容的版本
+              extractAndTip(dop.message, dop.tippedBody, data, found);
+            }
+            else {
+              extractAndTip(dop.message, dop.tippedBody, data, found);
+            }
+          });
+        }
+        else {
+          extractAndTip(dop.message, dop.tippedBody, data, found);
+        }
+      }
+    );
+  }
+}
 
 function removePartialTag (str) {
   var len = str.length;
@@ -826,12 +912,7 @@ $f(document).delegate("img#fbPhotoImage", "hover", function(event) {
       var picture = this.src.split('?')[0];
       //var picture = ''; // 待補
       var pname = removePartialTag($f('div#fbPhotoPageAuthorName a').html()).replace(/(<[^>]+)>/ig,"");
-      if ($f('div#fbPhotoPageAuthorName a').attr('href').indexOf('=') != -1) {
-        var pid = $f('div#fbPhotoPageAuthorName a').attr('href').split('=')[1].split('&')[0];
-      }
-      else {
-        var pid = $f('div#fbPhotoPageAuthorName a').attr('href').split('/').pop();
-      }
+      var pid = $f("div#fbPhotoPageAuthorName a").attr('data-hovercard').split('id=').pop()
       /*
       for (var a = 0; a < $f('abbr').length; a++) {
         if ($f('abbr')[a].className == '') {
@@ -859,32 +940,6 @@ $f(document).delegate("img#fbPhotoImage", "hover", function(event) {
       var lat = null;
       var lng = null;
     }
-    else if (this.className.indexOf('spotlight') != -1 ) {
-      message_tmp = removePartialTag($f('form.fbPhotosSnowliftFeedbackForm').html()).replace(/<abbr[^<]+<\/abbr>/ig,"");
-      message = message_tmp.replace(/<[^>]+>/ig,"");
-      message = message.replace(/四處爬爬走(路殺社, Reptile Road Mortality)/, "");
-      var oid = this.src.split('_')[1];
-      var picture = this.src.split('?')[0];
-      var pname = removePartialTag($f('div#fbPhotoSnowliftAuthorName a').html()).replace(/(<[^>]+)>/ig,"");
-      if ($f('div#fbPhotoSnowliftAuthorName a').attr('href').indexOf('=') != -1) {
-        var pid = $f('div#fbPhotoSnowliftAuthorName a').attr('href').split('=')[1].split('&')[0];
-      }
-      else {
-        var pid = $f('div#fbPhotoSnowliftAuthorName a').attr('href').split('/').pop();
-      }
-      var ctime = $f("abbr")[0].attributes['data-utime'].value;
-      var stime = null;
-      var cname = '';
-      var sname = '';
-      var tiw = 0;
-      var auth = '';
-      var spid = '';
-      var location = '';
-      var town = '';
-      var city = '';
-      var lat = null;
-      var lng = null;
-    }
 
     tippedBody = this;
     if ($f(document).find("div#tip_"+oid).length == 0) {
@@ -892,93 +947,19 @@ $f(document).delegate("img#fbPhotoImage", "hover", function(event) {
     }
     Tipped.show($f(tippedBody));
 //    if ((xhr == undefined)||(xhr.state() != 'pending')||(oid != current_oid)) {
-      xhr = $f.getJSON(
-        //"http://lod.tw/cs/api.findFBObj.php",
-        "http://"+app_domain+"/cs/api/api.findFBObj.php",
-        {
-          oid:  oid
-        },
-        function(data, textStatus, jqXHR) {
-          if (data) {
-            //Do something with the data
-            //message = '5566bingo';
-            data.ctime = ctime;
-            var found = true;
-            if (data.picture == '') {
-              if (picture != '') {
-                data.picture = picture;
-              }
-            }
-          }
-          else {
-            // do something with message;
-            // alert(doSomething);
-            data = {oid:oid, pid:pid, pname:pname, ctime:ctime, picture:picture, needMore:1};
-            var found = false;
-          }
-          $f.get("http://www.facebook.com/" + oid, {}, function (oData, oStatus, oXHR) {
-            gmRegex = /set=gm\.(\d+)/;
-            gmMatch = gmRegex.exec(oData);
-            if (gmMatch != null) {
-              // return gmMatch[1];
-              oPostURL = "https://www.facebook.com/"+gmMatch[1];
 
-              // 在下面這行前面加上//註解可改為抓原post內容的版本
-              extractAndTip(message, tippedBody, data, found); /*
-                
-              $f.get(oPostURL, {}, function (oPostData, oPostStatus, oPostXHR) {
-                message = message + "\n=====以下資訊抓自原post=====";
-                var ffss = 'we are 56';
-                
-                codeRegex = /\<code.+?\<\/code\>/g;
-                codeMatch = oPostData.match(codeRegex);
-                codeTmp = "";
-                for (ci = 0; ci < codeMatch.length; ci++) {
-                  if (codeMatch[ci].match(/userContentWrapper/) != null) {
-                    codeTmp = codeMatch[ci].replace(/<[^>]+>/ig,"");
-                    break; 
-                  }
-                }
-                if (codeTmp != "") {
-                  message = message + "\n" + codeTmp;
-                }
+    var dop = {init: true};
+    dop.oid = oid;
+    dop.ctime = ctime;
+    dop.picture = picture;
+    dop.message = message;
+    dop.pid = pid;
+    dop.pname = pname;
+    dop.tippedBody = tippedBody;
+    dop.go = true;
 
-                bigPipeRegex = /bigPipe\.onPageletArrive\(.+?\)\<\/script\>/g;
-                bigPipeMatch = oPostData.match(bigPipeRegex); 
-                for (oi = 0; oi < bigPipeMatch.length; oi++) {
-                  if (bigPipeMatch[oi].match(/"comments"\:/) != null) {
-                    commentsObjTmp = $f.parseJSON(bigPipeMatch[oi].split('bigPipe.onPageletArrive(')[1].split(")</script>")[0]);
-                    commentsObj = commentsObjTmp.jsmods;
-                    break; 
-                  }
-                }
-                for (var a=0; a<commentsObj.instances.length; a++) {
-                  if (commentsObj.instances[a] != undefined)
-                  for (var b=0; b<commentsObj.instances[a].length; b++) {
-                    if (commentsObj.instances[a][b] != undefined)
-                    for (var c=0; c<commentsObj.instances[a][b].length; c++) {
-                      if (commentsObj.instances[a][b][c] != undefined)
-                      if (commentsObj.instances[a][b][c].comments != undefined) {
-                        for (var d=0; d<commentsObj.instances[a][b][c].comments.length; d++) {
-                          message = message + "\n" + commentsObj.instances[a][b][c].comments[d].body.text;
-                        }
-                      }
-                    }
-                  }
-                }
-                //message_tmp = $f(data).find("span.fbPhotosPhotoCaption").html().replace(/<abbr[^<]+<\/abbr>/ig,"");
-                //postMessage = message_tmp.replace(/<[^>]+>/ig,"");
-                extractAndTip(message, tippedBody, data, found);
-              });
-              //*/
-              
-            }
-            else {
-              extractAndTip(message, tippedBody, data, found);
-            }
-          });
-        }
-      );
+    profSelected (dop);
+
 //    }
   }
 });

@@ -14,3 +14,14 @@ function checkForValidUrl(tabId, changeInfo, tab) {
 // Listen for any changes to the URL of any tab.
 chrome.tabs.onUpdated.addListener(checkForValidUrl);
 
+var selected_profile = 'rk';
+
+chrome.runtime.onMessage.addListener(function(message,sender,sendResponse){
+  if (message.query == 'get') {
+    sendResponse({selected_profile: selected_profile});
+  }
+  else if (message.query == 'set') {
+    selected_profile = message.selected_profile;
+  }
+  
+});
