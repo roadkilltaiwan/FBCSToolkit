@@ -26,6 +26,22 @@ actOpts += "<option value='2014端午節蛇類調查'>2014端午節蛇類調查<
 // 下面這行是參考範例與說明
 // actOpts += "<option value='會存進資料庫的內容'>會顯示在小工具選單裡的內容</option>";
 
+
+var killOptsArr = [
+  {code:0, txt:"沒死或沒動物"},
+  {code:100, txt:"路殺"},
+  {code:10200, txt:"疑似窗殺"},
+  {code:200, txt:"窗殺"},
+  {code:300, txt:"死於鳥網"},
+  {code:10400, txt:"疑似中毒"},
+  {code:10500, txt:"疑似疾病死亡"},
+  {code:10600, txt:"疑似他殺"},
+  {code:610, txt:"人殺"},
+  {code:620, txt:"寵物殺"},
+  {code:650, txt:"野動殺"},
+  {code:900, txt:"其它死因"}
+];
+
 var profOpts = "<option value=''>無</option>";
 
 function profSelected (dop) {
@@ -135,12 +151,13 @@ function triggerTipForm (oid, tf_tmp) {
     var mapX = document.forms['tipForm_'+oid].x.value;
     var mapY = document.forms['tipForm_'+oid].y.value;
     var gMapLink = "//maps.google.com.tw/maps?q="+mapY+","+mapX;
+    var rkMapLink = "http://taibif.tw/vgd/aprxGeoValidation/map.html?latlng="+mapY+","+mapX;
     if ((mapX=='')&&(mapY=='')) {
       alert('沒輸入點位學人看什麼地圖');
-      OpenInNewTab(gMapLink);
+      OpenInNewTab(rkMapLink);
     }
     else {
-      OpenInNewTab(gMapLink);
+      OpenInNewTab(rkMapLink);
     }
   });
 
@@ -184,12 +201,14 @@ function triggerTipForm (oid, tf_tmp) {
       sname3:document.forms['tipForm_'+oid].sname3.value,
       tagged:document.forms['tipForm_'+oid].tagged.value,
       inWhiteList:document.forms['tipForm_'+oid].tiw.checked,
-      rk:document.forms['tipForm_'+oid].rk.checked,
+      rk:document.forms['tipForm_'+oid].rk.value,
+      activity:document.forms['tipForm_'+oid].rk.value,
       needMore:document.forms['tipForm_'+oid].needMore.checked,      
       authState:document.forms['tipForm_'+oid].auth.value,
       byWhom:document.forms['tipForm_'+oid].by.value,
       spid:document.forms['tipForm_'+oid].spid.value,
       coid:document.forms['tipForm_'+oid].coid.value,
+      trid:document.forms['tipForm_'+oid].trid.value,
       x:document.forms['tipForm_'+oid].x.value,
       y:document.forms['tipForm_'+oid].y.value,
       altitude:document.forms['tipForm_'+oid].altitude.value,
@@ -325,6 +344,7 @@ function extractAndTip (message, tippedBody, meta, found) {
       var nfsname3 = (data.match[2]==undefined)?'':data.match[2].sn;
       var nfspid = ((data.extra==undefined)||(data.extra.SpecimenID==undefined))?'':data.extra.SpecimenID;
       var nfcoid = ((data.extra==undefined)||(data.extra.CollectionID==undefined))?'':data.extra.CollectionID;
+      var nftrid = data.trid;
       
       xcss = '';
       ycss = '';
@@ -344,10 +364,11 @@ function extractAndTip (message, tippedBody, meta, found) {
         formData.by = nfby;
         formData.spid = nfspid;
         formData.coid = nfcoid;
+        formData.trid = nftrid;
         formData.lat = (nfy == undefined)?"":nfy;
         formData.lng = (nfx == undefined)?"":nfx;
         formData.alt = '';
-        formData.rk = 'checked';
+        formData.rk = 100; //'checked';
         formData.actOpts = actOpts;
         formData.toTaiRON = 'checked';
       }      
@@ -383,7 +404,8 @@ function extractAndTip (message, tippedBody, meta, found) {
         formData.cname1 = (meta.cname[0]==undefined)?'':meta.cname[0];
         var cname1css = "";
         if ((meta.cname[0] != nfcname1)&&(nfcname1!='')&&(nfcname1!=undefined)&&(nfcname1!=null)) {
-          if ((formData.tagged == 1)&&(meta.needMore == 1)&&(formData.tiw == 0)) {
+          //if ((formData.tagged == 1)&&(meta.needMore == 1)&&(formData.tiw == 0)) {
+          if ((formData.tagged == 1)&&(meta.needMore == 1)) {
             formData.cname1 = nfcname1;
             cname1css = " style='background:pink;' ";
           }
@@ -392,7 +414,8 @@ function extractAndTip (message, tippedBody, meta, found) {
         formData.sname1 = (meta.sname[0]==undefined)?'':meta.sname[0];
         var sname1css = "";
         if ((meta.sname[0] != nfsname1)&&(nfsname1!='')&&(nfsname1!=undefined)&&(nfsname1!=null)) {
-          if ((formData.tagged == 1)&&(meta.needMore == 1)&&(formData.tiw == 0)) {
+          //if ((formData.tagged == 1)&&(meta.needMore == 1)&&(formData.tiw == 0)) {
+          if ((formData.tagged == 1)&&(meta.needMore == 1)) {
             formData.sname1 = nfsname1;
             sname1css = " style='background:pink;' ";
           }
@@ -401,7 +424,8 @@ function extractAndTip (message, tippedBody, meta, found) {
         formData.cname2 = (meta.cname[1]==undefined)?'':meta.cname[1];
         var cname2css = "";
         if ((meta.cname[1] != nfcname2)&&(nfcname2!='')&&(nfcname2!=undefined)&&(nfcname2!=null)) {
-          if ((formData.tagged == 1)&&(meta.needMore == 1)&&(formData.tiw == 0)) {
+          //if ((formData.tagged == 1)&&(meta.needMore == 1)&&(formData.tiw == 0)) {
+          if ((formData.tagged == 1)&&(meta.needMore == 1)) {
             formData.cname2 = nfcname2;
             cname2css = " style='background:pink;' ";
           }
@@ -410,7 +434,8 @@ function extractAndTip (message, tippedBody, meta, found) {
         formData.sname2 = (meta.sname[1]==undefined)?'':meta.sname[1];
         var sname2css = "";
         if ((meta.sname[1] != nfsname2)&&(nfsname2!='')&&(nfsname2!=undefined)&&(nfsname2!=null)) {
-          if ((formData.tagged == 1)&&(meta.needMore == 1)&&(formData.tiw == 0)) {
+          //if ((formData.tagged == 1)&&(meta.needMore == 1)&&(formData.tiw == 0)) {
+          if ((formData.tagged == 1)&&(meta.needMore == 1)) {
             formData.sname2 = nfsname2;
             sname2css = " style='background:pink;' ";
           }
@@ -419,7 +444,8 @@ function extractAndTip (message, tippedBody, meta, found) {
         formData.cname3 = (meta.cname[2]==undefined)?'':meta.cname[2];
         var cname3css = "";
         if ((meta.cname[2] != nfcname3)&&(nfcname3!='')&&(nfcname3!=undefined)&&(nfcname3!=null)) {
-          if ((formData.tagged == 1)&&(meta.needMore == 1)&&(formData.tiw == 0)) {
+          //if ((formData.tagged == 1)&&(meta.needMore == 1)&&(formData.tiw == 0)) {
+          if ((formData.tagged == 1)&&(meta.needMore == 1)) {
             formData.cname3 = nfcname3;
             cname3css = " style='background:pink;' ";
           }
@@ -428,7 +454,8 @@ function extractAndTip (message, tippedBody, meta, found) {
         formData.sname3 = (meta.sname[2]==undefined)?'':meta.sname[2];
         var sname3css = "";
         if ((meta.sname[2] != nfsname3)&&(nfsname3!='')&&(nfsname3!=undefined)&&(nfsname3!=null)) {
-          if ((formData.tagged == 1)&&(meta.needMore == 1)&&(formData.tiw == 0)) {
+          //if ((formData.tagged == 1)&&(meta.needMore == 1)&&(formData.tiw == 0)) {
+          if ((formData.tagged == 1)&&(meta.needMore == 1)) {
             formData.sname3 = nfsname3;
             sname3css = " style='background:pink;' ";
           }
@@ -457,6 +484,15 @@ function extractAndTip (message, tippedBody, meta, found) {
           if (meta.hu != 1) {        
             formData.coid = nfcoid;
             var coidcss = " style='background:pink;' ";
+          }
+        }
+
+        formData.trid = meta.trid;
+        var tridcss = "";
+        if ((meta.trid != '')&&(meta.trid != nftrid)) {
+          if (meta.hu != 1) {
+            formData.trid = nftrid;
+            var tridcss = " style='background:pink;' ";
           }
         }
 
@@ -504,17 +540,25 @@ function extractAndTip (message, tippedBody, meta, found) {
 
         formData.alt = meta.alt;
         if (meta.rk == 1) {
-          formData.rk = 'checked';
+          formData.rk = 100; //'checked';
+        }
+        else if (meta.rk == '') {
+          formData.rk = 0; //'';
         }
         else {
-          if (meta.hu != 1) {
-            formData.rk = 'checked';
-          }
-          else {
-            formData.rk = '';
-          }
+          formData.rk = meta.rk;
         }
       }
+      
+      var killOpts = "";
+      killOptsArr.forEach (function (optObj){
+        if (optObj.code == formData.rk) {
+          killOpts += "<option value='"+optObj.code+"' selected>"+optObj.txt+"</option>";
+        }
+        else {
+          killOpts += "<option value='"+optObj.code+"'>"+optObj.txt+"</option>";
+        }
+      });
       
       // 20131105 依討論結果修正: 只要有tag#*的  fbcs就自動勾選已鑑定 由資料輸入者確認正確性 並勾選是否路死
       if (formData.tagged == 1) {
@@ -529,6 +573,7 @@ function extractAndTip (message, tippedBody, meta, found) {
         var tipContent = "<form id='tipForm_"+formData.oid+"'><table>";
         tipContent += "<tr><td><h3 style='color:white;'>Profile</h3></td><td><select id='profile_select_"+formData.oid+"' style='overflow-x:visible; width:auto;' name='profile' id='profOpts'>"+profOpts+"</select></td><td><div id='server_"+formData.oid+"'>"+app_domain+"/"+app_context+"</div></td></tr>";
         tipContent += "<tr><td><h2 style='color:white;'>資料庫中"+title+"標記照片ID</h2></td><td><input name='oid' value='"+formData.oid+"'></td><td>特殊活動</td><td><select style='overflow-x:visible; width:auto;' name='activity'>"+formData.actOpts+"</select></td></tr>";
+        tipContent += "<tr><td>路殺社ID</td><td><input "+tridcss+" name='trid' value='"+formData.trid+"'/></td><td><a target='_blank' href='http://roadkill.tw/image/"+formData.trid+"'>帶我去路殺...社</a></td><td></td></tr>";
         tipContent += "<tr><td>上傳日期</td><td><input type='text' name='ctime' value='"+formData.ctime+"'></td>";
         tipContent += "<td>拍攝日期</td><td><input type='date' name='stime' value='"+formData.stime+"'></td></tr>";
         tipContent += "<tr><td>上傳者ID</td><td><input "+pidcss+" name='authorId' value='"+formData.pid+"'></td>";
@@ -536,7 +581,7 @@ function extractAndTip (message, tippedBody, meta, found) {
         tipContent += "<tr><td>物種一<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+cname1css+" name='cname1' value='"+formData.cname1+"'></td><td>學名1<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+sname1css+" name='sname1' value='"+formData.sname1+"'></td></tr>";
         tipContent += "<tr><td>物種二<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+cname2css+" name='cname2' value='"+formData.cname2+"'></td><td>學名2<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+sname2css+" name='sname2' value='"+formData.sname2+"'></td></tr>";
         tipContent += "<tr><td>物種三<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+cname3css+" name='cname3' value='"+formData.cname3+"'></td><td>學名3<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+sname3css+" name='sname3' value='"+formData.sname3+"'></td></tr>";
-        tipContent += "<tr><td>已鑑定</td><td><input type='checkbox' name='tiw' "+formData.tiw+"></td><td>是否路死</td><td><input type='checkbox' name='rk' "+formData.rk+"/></td></tr>";
+        tipContent += "<tr><td>已鑑定</td><td><input type='checkbox' name='tiw' "+formData.tiw+"></td><td>死亡類別</td><td><select style='overflow-x:visible; width:auto;' name='rk'>"+killOpts+"</select></td></tr>";
         tipContent += "<tr><td>是否需要後續人工補充更新</td><td><input name='needMore' type='checkbox' "+formData.needMore+" /></td><td>是否需要進TaiRON</td><td><input name='toTaiRON' type='checkbox' "+formData.toTaiRON+" /></td></tr>";
         tipContent += "<tr><td>授權方式</td><td><input "+authcss+" name='auth' value='"+(((formData.auth=="")&&(meta.hu != 1))?"未授權":formData.auth)+"'><td>姓名標示</td></td><td><input "+bycss+" name='by' value='"+((formData.by=="")?("未授權"+formData.pname):formData.by)+"'></td></tr>";
         tipContent += "<tr><td>標本號</td><td><input "+spidcss+" name='spid' value='"+((formData.spid==undefined)?"":formData.spid)+"'/></td><td>採集編號</td><td><input "+coidcss+" name='coid' value='"+((formData.coid==undefined)?"":formData.coid)+"'/></td></tr>";
@@ -666,7 +711,7 @@ $f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoR
             target = $f(this).find('a').attr('ajaxify');
           }
           else {
-            alert("FB更動顯示結構了, 請聯絡程式設計師修改程式!!");
+            console.log("FB更動顯示結構了, 請聯絡程式設計師修改程式!!");
             return;
           }
         }
@@ -718,7 +763,8 @@ $f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoR
         message = postMessage + message + supplMessage;
         message = message.replace(/四處爬爬走(路殺社, Reptile Road Mortality)/, "");
         
-        var picture = $f(data).find("img.fbPhotoImage").attr('src').split('?')[0];
+        //var picture = $f(data).find("img.fbPhotoImage").attr('src').split('?')[0];
+        var picture = $f(data).find("img.fbPhotoImage").attr('src');
 
         var paramString = this.url.split('?')[1];
         var paramVals = paramString.split('&');
@@ -807,7 +853,7 @@ function runTheFlow (dop /*dataOnPage*/) {
           //message = '5566bingo';
           data.ctime = dop.ctime;
           var found = true;
-          if (data.picture == '') {
+          if (data.picture != dop.picture) {
             if (dop.picture != '') {
               data.picture = dop.picture;
             }
@@ -909,7 +955,8 @@ $f(document).delegate("img#fbPhotoImage", "hover", function(event) {
       message = message.replace(/四處爬爬走(路殺社, Reptile Road Mortality)/, "");
       //var oid = this.src.split('_')[1];
       var oid = document.location.href.match(/fbid=(\d+)/)[1];
-      var picture = this.src.split('?')[0];
+      // var picture = this.src.split('?')[0];
+      var picture = this.src;
       //var picture = ''; // 待補
       var pname = removePartialTag($f('div#fbPhotoPageAuthorName a').html()).replace(/(<[^>]+)>/ig,"");
       var pid = $f("div#fbPhotoPageAuthorName a").attr('data-hovercard').split('id=').pop()
