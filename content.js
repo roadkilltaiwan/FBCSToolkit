@@ -18,7 +18,8 @@
 
 var app_domain = "roadkill.tw";
 var app_group = 238918712815615;
-var app_context = "cs";
+var app_context = ".";
+var isCtrlPressed = false;
 
 var actOpts = "<option value=''>無</option>"; // 這行是重要的開頭, 不要更動 
 actOpts += "<option value='2014端午節蛇類調查'>2014端午節蛇類調查</option>";
@@ -26,7 +27,7 @@ actOpts += "<option value='2014端午節蛇類調查'>2014端午節蛇類調查<
 // 下面這行是參考範例與說明
 // actOpts += "<option value='會存進資料庫的內容'>會顯示在小工具選單裡的內容</option>";
 
-
+/*
 var killOptsArr = [
   {code:0, txt:"沒死或沒動物"},
   {code:100, txt:"路殺"},
@@ -41,6 +42,23 @@ var killOptsArr = [
   {code:650, txt:"野動殺"},
   {code:900, txt:"其它死因"}
 ];
+//*/
+
+var killOptsArr = [
+  {code:0, txt:"沒死或沒動物"},
+  {code:100, txt:"路殺"},
+  {code:200, txt:"窗殺"},
+  {code:300, txt:"死於鳥網"},
+  {code:400, txt:"中毒"},
+  {code:500, txt:"疾病死亡"},
+  {code:600, txt:"他殺"},
+  {code:610, txt:"人殺"},
+  {code:620, txt:"寵物殺"},
+  {code:650, txt:"野動殺"},
+  {code:900, txt:"其它死因"}
+];
+
+
 
 var profOpts = "<option value=''>無</option>";
 
@@ -60,9 +78,9 @@ function setProfile (val) {
     case 'rk':
       profOpts = "<option value='rk' selected>路殺社</option>"; 
       profOpts += "<option value='dbf'>端午節蛇類調查</option>";
-      app_domain = "roadkill.tw";
+      app_domain = "cs.roadkill.tw";
       app_group = 238918712815615;
-      app_context = "cs";
+      app_context = ".";
             
       break;
     case 'dbf':
@@ -75,6 +93,9 @@ function setProfile (val) {
       break;
   }    
 }
+
+
+var fill_data_link_label = '資料載入中請稍後';
 
 var userInput = "";
 var content = "";
@@ -139,12 +160,115 @@ function triggerTipForm (oid, tf_tmp) {
     OpenInNewTab(oPostURL);
   });
 
+  function fillDataFromTaiRON (nid) {
+    if (!isNaN(Number(nid)) && nid !== null&& nid !== 0) {
+      if (document.forms['tipForm_'+oid].trid.value == '') {
+        document.forms['tipForm_'+oid].trid.value = nid;
+      }
+      $f('#to_tairon_link').attr('href', 'https://roadkill.tw/occurrence/' + nid);
+      $f.get("https://roadkill.tw/drupalgap/node/" + nid, function(data){
+        if ((superX === 0 || superX === '' || superX === undefined || superX === null || isNaN(superX)) && (superX === 0 || superX === '' || superX === undefined || superX === null || isNaN(superX))) {
+          if (data.field_collected_location_coord && data.field_collected_location_coord.und && data.field_collected_location_coord.und[0]) {
+            var rkLat = data.field_collected_location_coord.und[0].lat;
+            var rkLng = data.field_collected_location_coord.und[0].lng;
+            if (rkLat && rkLng) {
+              document.forms['tipForm_'+oid].x.value = rkLng;
+              document.forms['tipForm_'+oid].y.value = rkLat;
+              if ((document.forms['tipForm_'+oid].p1.value === '' || document.forms['tipForm_'+oid].p1.value === null || document.forms['tipForm_'+oid].p1.value === undefined)||(document.forms['tipForm_'+oid].p2.value === '' || document.forms['tipForm_'+oid].p2.value === null || document.forms['tipForm_'+oid].p2.value === undefined)) {
+                $f.get("https://roadkill.tw/api/getgeo?latlng=" + rkLat + ',' + rkLng, function (geoAdminData) {
+                  if (geoAdminData.results.length > 0) {
+                    document.forms['tipForm_'+oid].p1.value = geoAdminData.results[0].county;
+                    document.forms['tipForm_'+oid].p2.value = geoAdminData.results[0].town;
+                  }
+                },'json')
+              }    
+            }
+          }
+        }
+        // 當詳細地點未填時到官網抓資訊
+        if (data.field_collected_location && data.field_collected_location.und && data.field_collected_location.und[0]) {
+          var userInputLoc = data.field_collected_location.und[0].safe_value;
+          if (userInputLoc) {
+            document.forms['tipForm_'+oid].p3.value = userInputLoc;
+          }
+        }
+        if (data.field_collected_location_alti && data.field_collected_location_alti.und && data.field_collected_location_alti.und[0]) {
+          document.forms['tipForm_'+oid].altitude.value = data.field_collected_location_alti.und[0].value;
+        }
+
+        // 當使用者是Tw RoadKill且授權方式不明時, 到官網抓資訊
+        if (data.field_license_attribute && data.field_license_attribute.und && data.field_license_attribute.und[0]) {
+          if (document.forms['tipForm_'+oid].authorName.value === 'Tw  Roadkill') {
+            var authorName = message.match(/與(.+)。讚/);
+            if (authorName[1]) {
+              document.forms['tipForm_'+oid].authorName.value = authorName[1];
+            }
+            var attrTo = data.field_license_attribute.und[0].safe_value;
+            if (attrTo) {
+              // document.forms['tipForm_'+oid].authorName.value = attrTo;
+              document.forms['tipForm_'+oid].by.value = attrTo;
+            }
+          }
+
+          if (data.cs && data.cs.srcuid) {
+            document.forms['tipForm_'+oid].authorId.value = data.cs.srcuid;
+          }
+          if (data.field_license_deed && data.field_license_deed.und && data.field_license_deed.und[0]) {
+            if (document.forms['tipForm_'+oid].auth.value === '未授權') {
+              if (data.field_license_deed.und[0].value === null || data.field_license_deed.und[0].value === 'null') {
+                document.forms['tipForm_'+oid].auth.value = 'c';
+              }
+              else {
+                document.forms['tipForm_'+oid].auth.value = data.field_license_deed.und[0].value;
+              }
+            }
+          }
+
+        }
+      }, 'json');
+    }  
+  }
+
+
+
   $f(document).delegate("div#forceXY_" + oid, "click", function() {
     //$f(this).parent().next()..value = '';
     //$f(this).parent().next().children().attr('value', '');
-    var ffss = 5566;
     document.forms['tipForm_'+oid].x.value = superX;
     document.forms['tipForm_'+oid].y.value = superY;
+
+    var nid = null;
+    var rkid_string = message.match(/\[roadkill\: *([0-9]+) *\]/);
+    if (rkid_string !== null) {
+      nid = rkid_string[1];
+    }
+    // 當可取得nid時到官網抓/補資訊
+    if (!isNaN(Number(nid)) && nid !== null && nid !== 0) {
+      fillDataFromTaiRON (nid);
+    }
+    else {
+      $f.ajax({
+        type: "HEAD",
+        async: true,
+        url: "//roadkill.tw/query?row=0&rowsperpage=15&nodetype[0]=occurrence&ft=fbid%3A"+oid+"%20verified%3A2",
+        success: function(message, txt, xhr) {
+          nid = xhr.getResponseHeader('Link').match(/<(.+?)>/)[1].split('/').pop();
+          if (!isNaN(Number(nid)) && nid !== null && nid !== 0) {
+            fillDataFromTaiRON (nid);
+          }
+        }
+      })
+    }
+    if ((document.forms['tipForm_'+oid].p1.value === '' || document.forms['tipForm_'+oid].p1.value === null || document.forms['tipForm_'+oid].p1.value === undefined)||(document.forms['tipForm_'+oid].p2.value === '' || document.forms['tipForm_'+oid].p2.value === null || document.forms['tipForm_'+oid].p2.value === undefined)) {
+      if (document.forms['tipForm_'+oid].x.value && document.forms['tipForm_'+oid].y.value) {
+        $f.get("https://roadkill.tw/api/getgeo?latlng=" + document.forms['tipForm_'+oid].y.value + ',' + document.forms['tipForm_'+oid].x.value, function (geoAdminData) {
+          if (geoAdminData.results.length > 0) {
+            document.forms['tipForm_'+oid].p1.value = geoAdminData.results[0].county;
+            document.forms['tipForm_'+oid].p2.value = geoAdminData.results[0].town;
+          }
+        },'json')
+      }
+    }    
   });
 
   $f(document).delegate("a#mapLookup_" + oid, "click", function() {
@@ -199,9 +323,12 @@ function triggerTipForm (oid, tf_tmp) {
       sname1:document.forms['tipForm_'+oid].sname1.value,
       sname2:document.forms['tipForm_'+oid].sname2.value,
       sname3:document.forms['tipForm_'+oid].sname3.value,
+      count1:((document.forms['tipForm_'+oid].cname1.value==''&&document.forms['tipForm_'+oid].sname1.value=='')?'':document.forms['tipForm_'+oid].count1.value),
+      count2:((document.forms['tipForm_'+oid].cname2.value==''&&document.forms['tipForm_'+oid].sname2.value=='')?'':document.forms['tipForm_'+oid].count2.value),
+      count3:((document.forms['tipForm_'+oid].cname3.value==''&&document.forms['tipForm_'+oid].sname3.value=='')?'':document.forms['tipForm_'+oid].count3.value),
       tagged:document.forms['tipForm_'+oid].tagged.value,
       inWhiteList:document.forms['tipForm_'+oid].tiw.checked,
-      rk:document.forms['tipForm_'+oid].rk.value,
+      rk:((document.forms['tipForm_'+oid].isConfirmed.value=='yes')?document.forms['tipForm_'+oid].rk.value:parseInt(document.forms['tipForm_'+oid].rk.value)+10000),
       activity:document.forms['tipForm_'+oid].rk.value,
       needMore:document.forms['tipForm_'+oid].needMore.checked,      
       authState:document.forms['tipForm_'+oid].auth.value,
@@ -250,9 +377,12 @@ var formData = {
   init:true
 };
 
+var placesHTML = {};
+
 function extractAndTip (message, tippedBody, meta, found) {
     var sid = "#places_hierarchy_" + meta.oid;
-    if (($f(sid).html()==null)||($f(sid).html()=="")) {
+    var oid = meta.oid;
+    if (placesHTML[oid] === undefined) {
       if ((placeXHR == undefined)||(placeXHR.state() != 'pending')) {
         placeXHR = $f.post(
           "//"+app_domain+"/"+app_context+"/api/api.getNames.php",
@@ -270,15 +400,15 @@ function extractAndTip (message, tippedBody, meta, found) {
               }
             }
             if (places.length > 0) {
-              var placesHTML = "";
+              placesHTML[oid] = "";
               places.sort();
               //placesHTML += "<select name='places'>";
-              placesHTML += "<option value='-1'>無</option>";
+              placesHTML[oid] += "<option value='-1'>無</option>";
               for (var k = 0; k < places.length; k++) {
-                placesHTML += "<option value='"+places[k]+"'>"+places[k]+"</option>";
+                placesHTML[oid] += "<option value='"+places[k]+"'>"+places[k]+"</option>";
               }
               //placesHTML += "</select>";
-              $f(sid).html(placesHTML);
+              $f(sid).html(placesHTML[oid]);
             }
           },
           'json'
@@ -338,13 +468,25 @@ function extractAndTip (message, tippedBody, meta, found) {
       var nfstime = data.date;
       var nfcname1 = (data.match[0]==undefined)?'':data.match[0].cn;
       var nfsname1 = (data.match[0]==undefined)?'':data.match[0].sn;
+      var nfcount1 = (data.match[0]==undefined)?'':((nfcname1==''&&nfsname1=='')?'':1);
       var nfcname2 = (data.match[1]==undefined)?'':data.match[1].cn;
       var nfsname2 = (data.match[1]==undefined)?'':data.match[1].sn;
+      var nfcount2 = (data.match[0]==undefined)?'':((nfcname2==''&&nfsname2=='')?'':1);
       var nfcname3 = (data.match[2]==undefined)?'':data.match[2].cn;
       var nfsname3 = (data.match[2]==undefined)?'':data.match[2].sn;
+      var nfcount3 = (data.match[0]==undefined)?'':((nfcname3==''&&nfsname3=='')?'':1);
       var nfspid = ((data.extra==undefined)||(data.extra.SpecimenID==undefined))?'':data.extra.SpecimenID;
       var nfcoid = ((data.extra==undefined)||(data.extra.CollectionID==undefined))?'':data.extra.CollectionID;
       var nftrid = data.trid;
+      
+      var nid = null;
+      var rkid_string = message.match(/\[roadkill\: *([0-9]+) *\]/);
+      if (rkid_string !== null) {
+        nid = rkid_string[1];
+      }
+      if (!isNaN(Number(nid)) && nid !== null && data.trid === '') {      
+        var nftrid = nid;
+      }
       
       xcss = '';
       ycss = '';
@@ -355,10 +497,13 @@ function extractAndTip (message, tippedBody, meta, found) {
         formData.stime = nfstime;
         formData.cname1 = nfcname1;
         formData.sname1 = nfsname1;
+        formData.count1 = nfcount1;
         formData.cname2 = nfcname2;
         formData.sname2 = nfsname2;
+        formData.count2 = nfcount2;
         formData.cname3 = nfcname3;
         formData.sname3 = nfsname3;
+        formData.count3 = nfcount3;
         formData.tiw = 0; // 目前的方法無法從client端得知
         formData.auth = nfauth;
         formData.by = nfby;
@@ -382,7 +527,7 @@ function extractAndTip (message, tippedBody, meta, found) {
         }
         
       
-        if (meta.actOpts != '') { 
+        if ((meta.actOpts != '')&&(meta.actOpts != null)&&(meta.actOpts != 'null')) { 
           formData.actOpts = actOpts  + "<option value='"+meta.actOpts+"' selected>"+meta.actOpts+"</option>";
         }
         else {
@@ -420,6 +565,9 @@ function extractAndTip (message, tippedBody, meta, found) {
             sname1css = " style='background:pink;' ";
           }
         }
+
+        formData.count1 = (meta.count[0]==undefined)?(((formData.sname1!='')||(formData.cname1!=''))?1:''):meta.count[0];
+
         
         formData.cname2 = (meta.cname[1]==undefined)?'':meta.cname[1];
         var cname2css = "";
@@ -441,6 +589,9 @@ function extractAndTip (message, tippedBody, meta, found) {
           }
         }
         
+        formData.count2 = (meta.count[1]==undefined)?(((formData.sname2!='')||(formData.cname2!=''))?1:''):meta.count[1];
+        
+        
         formData.cname3 = (meta.cname[2]==undefined)?'':meta.cname[2];
         var cname3css = "";
         if ((meta.cname[2] != nfcname3)&&(nfcname3!='')&&(nfcname3!=undefined)&&(nfcname3!=null)) {
@@ -460,6 +611,9 @@ function extractAndTip (message, tippedBody, meta, found) {
             sname3css = " style='background:pink;' ";
           }
         }
+        
+        formData.count3 = (meta.count[2]==undefined)?(((formData.sname3!='')||(formData.cname3!=''))?1:''):meta.count[2];
+        
         
         formData.auth = meta.auth;
         if ((meta.auth == null)||(meta.auth == undefined)||(meta.auth == 'undefined')||(meta.auth == '')||(meta.auth == '未授權')||(meta.auth == '未受權')) {
@@ -551,10 +705,27 @@ function extractAndTip (message, tippedBody, meta, found) {
       }
       
       var killOpts = "";
+      var isConfirmedChecked = 'checked';
+      var isConfirmedNotChecked = '';
+      var isConfirmedCSS = 'style=\'color:red\'';
+      var isConfirmedNotCSS = '';      
       killOptsArr.forEach (function (optObj){
         if (optObj.code == formData.rk) {
           killOpts += "<option value='"+optObj.code+"' selected>"+optObj.txt+"</option>";
+          isConfirmedChecked = 'checked';
+          isConfirmedNotChecked = '';
+          isConfirmedCSS = 'style=\'color:red\'';
+          isConfirmedNotCSS = '';      
         }
+        //*
+        else if (optObj.code == (parseInt(formData.rk)-10000)) {
+          killOpts += "<option value='"+optObj.code+"' selected>"+optObj.txt+"</option>";
+          isConfirmedChecked = '';
+          isConfirmedNotChecked = 'checked';
+          isConfirmedCSS = '';
+          isConfirmedNotCSS = 'style=\'color:red\'';      
+        }
+        //*/
         else {
           killOpts += "<option value='"+optObj.code+"'>"+optObj.txt+"</option>";
         }
@@ -571,28 +742,30 @@ function extractAndTip (message, tippedBody, meta, found) {
       //var tipContent = "<form><table><tr><td>"+oid+"</td></tr><tr><td>"+authorName+"</td></tr><tr><td>"+authorId+"</td></tr><tr><td>"+data['match']+"</td></tr><tr><td>"+oid+"</td></tr><tr><td>"+oid+"</td></tr></table></form>";
       if (($f("#tipForm_"+meta.oid).html()==null)||(meta.oid != current_oid)) {
         var tipContent = "<form id='tipForm_"+formData.oid+"'><table>";
-        tipContent += "<tr><td><h3 style='color:white;'>Profile</h3></td><td><select id='profile_select_"+formData.oid+"' style='overflow-x:visible; width:auto;' name='profile' id='profOpts'>"+profOpts+"</select></td><td><div id='server_"+formData.oid+"'>"+app_domain+"/"+app_context+"</div></td></tr>";
-        tipContent += "<tr><td><h2 style='color:white;'>資料庫中"+title+"標記照片ID</h2></td><td><input name='oid' value='"+formData.oid+"'></td><td>特殊活動</td><td><select style='overflow-x:visible; width:auto;' name='activity'>"+formData.actOpts+"</select></td></tr>";
-        tipContent += "<tr><td>路殺社ID</td><td><input "+tridcss+" name='trid' value='"+formData.trid+"'/></td><td><a target='_blank' href='http://roadkill.tw/image/"+formData.trid+"'>帶我去路殺...社</a></td><td></td></tr>";
-        tipContent += "<tr><td>上傳日期</td><td><input type='text' name='ctime' value='"+formData.ctime+"'></td>";
-        tipContent += "<td>拍攝日期</td><td><input type='date' name='stime' value='"+formData.stime+"'></td></tr>";
-        tipContent += "<tr><td>上傳者ID</td><td><input "+pidcss+" name='authorId' value='"+formData.pid+"'></td>";
+        tipContent += "<tr><td colspan=2><h3 style='color:white;'>Profile</h3></td><td><select id='profile_select_"+formData.oid+"' style='overflow-x:visible; width:auto;' name='profile' id='profOpts'>"+profOpts+"</select></td><td><div id='server_"+formData.oid+"'>"+app_domain+"/"+app_context+"</div></td></tr>";
+        tipContent += "<tr><td colspan=2><h2 style='color:white;'>資料庫中"+title+"標記照片ID</h2></td><td><input name='oid' value='"+formData.oid+"'></td><td>特殊活動</td><td><select style='overflow-x:visible; width:auto;' name='activity'>"+formData.actOpts+"</select></td></tr>";
+        tipContent += "<tr><td colspan=2>路殺社ID</td><td><input "+tridcss+" name='trid' value='"+formData.trid+"'/></td><td><a id='to_tairon_link' target='_blank' href='https://roadkill.tw/occurrence/"+formData.trid+"'>TaiRON由此去</a></td><td></td></tr>";
+        tipContent += "<tr><td colspan=2>上傳日期</td><td><input type='text' name='ctime' value='"+formData.ctime+"'></td>";
+        tipContent += "<td>拍攝日期</td><td><input type='date' name='stime' value='"+formData.stime+"'></td><td></td><td></td></tr>";
+        tipContent += "<tr><td colspan=2>上傳者ID</td><td><input "+pidcss+" name='authorId' value='"+formData.pid+"'></td>";
         tipContent += "<td>上傳者代號</td><td><input name='authorName' value='"+formData.pname+"'></td></tr>";
-        tipContent += "<tr><td>物種一<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+cname1css+" name='cname1' value='"+formData.cname1+"'></td><td>學名1<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+sname1css+" name='sname1' value='"+formData.sname1+"'></td></tr>";
-        tipContent += "<tr><td>物種二<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+cname2css+" name='cname2' value='"+formData.cname2+"'></td><td>學名2<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+sname2css+" name='sname2' value='"+formData.sname2+"'></td></tr>";
-        tipContent += "<tr><td>物種三<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+cname3css+" name='cname3' value='"+formData.cname3+"'></td><td>學名3<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+sname3css+" name='sname3' value='"+formData.sname3+"'></td></tr>";
-        tipContent += "<tr><td>已鑑定</td><td><input type='checkbox' name='tiw' "+formData.tiw+"></td><td>死亡類別</td><td><select style='overflow-x:visible; width:auto;' name='rk'>"+killOpts+"</select></td></tr>";
-        tipContent += "<tr><td>是否需要後續人工補充更新</td><td><input name='needMore' type='checkbox' "+formData.needMore+" /></td><td>是否需要進TaiRON</td><td><input name='toTaiRON' type='checkbox' "+formData.toTaiRON+" /></td></tr>";
-        tipContent += "<tr><td>授權方式</td><td><input "+authcss+" name='auth' value='"+(((formData.auth=="")&&(meta.hu != 1))?"未授權":formData.auth)+"'><td>姓名標示</td></td><td><input "+bycss+" name='by' value='"+((formData.by=="")?("未授權"+formData.pname):formData.by)+"'></td></tr>";
-        tipContent += "<tr><td>標本號</td><td><input "+spidcss+" name='spid' value='"+((formData.spid==undefined)?"":formData.spid)+"'/></td><td>採集編號</td><td><input "+coidcss+" name='coid' value='"+((formData.coid==undefined)?"":formData.coid)+"'/></td></tr>";
-        tipContent += "<tr><td>x</td><td><input "+xcss+" name='x' value='"+formData.lng.toString().replace(/'/, '&apos;')+"'/></td><td>y</td><td><input "+ycss+" name='y' value='"+formData.lat.toString().replace(/'/, '&apos;')+"'/></td></tr>";
-        tipContent += "<tr><td>海拔高度</td><td><input name='altitude'/></td><td></td><td><div id='forceXY_"+formData.oid+"'><u>補上XY</u></div><a id='mapLookup_"+formData.oid+"'>我要看地圖</a><div id='transformXY_"+formData.oid+"'><u>轉換管它什麼座標</u></div><a id='oPost_"+formData.oid+"'>原po呢????(敲碗)</a></td></tr>";
-        tipContent += "<tr><td>地名階層</td><td colspan='3'><span id='places_hierarchy_wrap'><select style='overflow-x:visible; width:auto;' id='places_hierarchy_"+meta.oid+"'></select></span></td></tr>";
-        tipContent += "<tr><td>地點縣市</td><td><input id='p1_"+meta.oid+"' name='p1' value='"+p1+"'/></td><td>地點鄉鎮</td><td><input id='p2_"+meta.oid+"' name='p2' value='"+p2+"'/></td></tr>";
-        tipContent += "<tr><td>地點其他</td><td><input id='p3_"+meta.oid+"' name='p3' value='"+p3.replace(/'/, '&apos;')+"'/></td><td>其它座標</td><td><input id='xySource_"+formData.oid+"' name='xySource'/></td></tr>";
-        tipContent += "<tr><td>備註</td><td colspan='3'><input style='width:97%;' name='remark' value='"+remark.replace(/</, '&lt;').replace(/>/, '&gt;')+"'/></td></tr>";
-        tipContent += "<tr><td colspan='4'><textarea name='dummy' style=\"width:97%;height:200px\" readonly>*****此區訊息僅供確認用, 不允許修改亦不會被傳送*****\n"+message+"</textarea></td></tr>";
-        tipContent += "<tr><td/><td style='text-align:center;'><div id='tipFormSubmit_"+meta.oid+"'><b><u>送出</u></b></div></td><td style='text-align:center;'><div id='tipFormClose_"+meta.oid+"'><b><u>關閉不送</u></b></div></td><td/></tr>";
+        tipContent += "<tr><td>物種一<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input type='number' style='width:50px' min=1 name='count1' value='"+formData.count1+"'><img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+cname1css+" name='cname1' value='"+formData.cname1+"'></td><td>學名1<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+sname1css+" name='sname1' value='"+formData.sname1+"'></td></tr>";
+        tipContent += "<tr><td>物種二<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input type='number' style='width:50px' min=1 name='count2' value='"+formData.count2+"'><img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+cname2css+" name='cname2' value='"+formData.cname2+"'></td><td>學名2<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+sname2css+" name='sname2' value='"+formData.sname2+"'></td></tr>";
+        tipContent += "<tr><td>物種三<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input type='number' style='width:50px' min=1 name='count3' value='"+formData.count3+"'><img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+cname3css+" name='cname3' value='"+formData.cname3+"'></td><td>學名3<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+sname3css+" name='sname3' value='"+formData.sname3+"'></td></tr>";
+//        tipContent += "<tr><td colspan=2>物種二<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+cname2css+" name='cname2' value='"+formData.cname2+"'></td><td>學名2<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+sname2css+" name='sname2' value='"+formData.sname2+"'></td><td>數量2<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input size=1 name='count2' value='"+formData.count2+"'></td></tr>";
+//        tipContent += "<tr><td colspan=2>物種三<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+cname3css+" name='cname3' value='"+formData.cname3+"'></td><td>學名3<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input "+sname3css+" name='sname3' value='"+formData.sname3+"'></td><td>數量3<img style='float:right' class='quick_clean_"+formData.oid+"' src='chrome-extension://"+cepath+"/images/monotone_close_exit_delete_small.png'></td><td><input size=1 name='count3' value='"+formData.count3+"'></td></tr>";
+        tipContent += "<tr><td colspan=2>已鑑定</td><td><input type='checkbox' name='tiw' "+formData.tiw+"></td><td>死亡類別<input type=radio name='isConfirmed' value='yes' "+isConfirmedChecked+"><span "+isConfirmedCSS+">確定</span><input type=radio name='isConfirmed' value='no'"+isConfirmedNotChecked+"><span "+isConfirmedNotCSS+">疑似</span></td><td><select style='overflow-x:visible; width:auto;' name='rk'>"+killOpts+"</select></td></tr>";
+        tipContent += "<tr><td colspan=2>是否需要後續人工補充更新</td><td><input name='needMore' type='checkbox' "+formData.needMore+" /></td><td>是否需要進TaiRON</td><td><input name='toTaiRON' type='checkbox' "+formData.toTaiRON+" /></td></tr>";
+        tipContent += "<tr><td colspan=2>授權方式</td><td><input "+authcss+" name='auth' value='"+(((formData.auth=="")&&(meta.hu != 1))?"未授權":formData.auth)+"'><td>姓名標示</td></td><td><input "+bycss+" name='by' value='"+((formData.by=="")?("未授權"+formData.pname):formData.by)+"'></td></tr>";
+        tipContent += "<tr><td colspan=2>標本號</td><td><input "+spidcss+" name='spid' value='"+((formData.spid==undefined)?"":formData.spid)+"'/></td><td>採集編號</td><td><input "+coidcss+" name='coid' value='"+((formData.coid==undefined)?"":formData.coid)+"'/></td></tr>";
+        tipContent += "<tr><td colspan=2>x</td><td><input "+xcss+" name='x' value='"+formData.lng.toString().replace(/'/, '&apos;')+"'/></td><td>y</td><td><input "+ycss+" name='y' value='"+formData.lat.toString().replace(/'/, '&apos;')+"'/></td></tr>";
+        tipContent += "<tr><td colspan=2>海拔高度</td><td><input name='altitude'/></td><td></td><td><div id='forceXY_"+formData.oid+"'><u><div id='fill_data_"+formData.oid+"'>"+fill_data_link_label+"</div></u></div><a id='mapLookup_"+formData.oid+"'>我要看地圖</a><div id='transformXY_"+formData.oid+"'><u>轉換管它什麼座標</u></div><a id='oPost_"+formData.oid+"'>原po呢????(敲碗)</a></td></tr>";
+        tipContent += "<tr><td colspan=2>地名階層</td><td colspan='3'><span id='places_hierarchy_wrap'><select style='overflow-x:visible; width:auto;' id='places_hierarchy_"+meta.oid+"'>"+placesHTML[meta.oid]+"</select></span></td></tr>";
+        tipContent += "<tr><td colspan=2>地點縣市</td><td><input id='p1_"+meta.oid+"' name='p1' value='"+p1+"'/></td><td>地點鄉鎮</td><td><input id='p2_"+meta.oid+"' name='p2' value='"+p2+"'/></td></tr>";
+        tipContent += "<tr><td colspan=2>地點其他</td><td><input id='p3_"+meta.oid+"' name='p3' value='"+p3.replace(/'/, '&apos;')+"'/></td><td>其它座標</td><td><input id='xySource_"+formData.oid+"' name='xySource'/></td></tr>";
+        tipContent += "<tr><td colspan=2>備註</td><td colspan='3'><input style='width:97%;' name='remark' value='"+remark.replace(/</, '&lt;').replace(/>/, '&gt;')+"'/></td></tr>";
+        tipContent += "<tr><td colspan='6'><textarea name='dummy' style=\"width:97%;height:200px\" readonly>*****此區訊息僅供確認用, 不允許修改亦不會被傳送*****\n"+message+"</textarea></td></tr>";
+        tipContent += "<tr><td colspan=2/><td style='text-align:center;'><div id='tipFormSubmit_"+meta.oid+"'><b><u>送出</u></b></div></td><td style='text-align:center;'><div id='tipFormClose_"+meta.oid+"'><b><u>關閉不送</u></b></div></td><td/></tr>";
         tipContent += "</table>";
         tipContent += "<input type='hidden' name='tagged' value='"+formData.tagged+"' />";
         tipContent += "<input type='hidden' name='picture' value='"+meta.picture+"' />";
@@ -633,6 +806,7 @@ function extractAndTip (message, tippedBody, meta, found) {
 
       Tipped.refresh($f(tippedBody), {target:'rigthtop', tooltip:'lefttop'});
       triggerTipForm(meta.oid, tippedBody);
+      $f('#fill_data_' + meta.oid).html('補上XY,使用者與授權');
       current_oid = meta.oid;      
       
        
@@ -650,7 +824,7 @@ $f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoR
     return;
   }
   event.stopPropagation();
-  var isCtrlPressed = event.ctrlKey;
+  isCtrlPressed = event.ctrlKey;
   if (!isCtrlPressed) {
     return;
   }
@@ -741,7 +915,7 @@ $f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoR
       {},
       function (data, thumbSTATUS, thumbXHR) {
         message = "";
-        commentsObj = $f.parseJSON(data.split('require("InitialJSLoader").handleServerJS(')[1].split(");\n")[0]);
+        commentsObj = $f.parseJSON(data.split('require("InitialJSLoader").handleServerJS(')[1].split(');}, "ServerJS define", {"root":true})();\n')[0]);
         for (var a=0; a<commentsObj.instances.length; a++) {
           if (commentsObj.instances[a] != undefined)
           for (var b=0; b<commentsObj.instances[a].length; b++) {
@@ -821,7 +995,8 @@ $f(document).delegate("i.uiMediaThumbImg, div.uiScaledImageContainer, div.photoR
           Tipped.create($f(tippedBody), "<div id='tip_"+oid+"'>Loading</div>", {onHide:unsetOid, target:'rigthtop', tooltip:'lefttop',fixed:true, closeButton: true, hideOn:false, showOn:false, closeButton:true});
         }
         Tipped.show($f(tippedBody));
-        
+        $f( '.t_Tooltip' ).draggable();
+                
         var dop = {init: true};
         dop.oid = oid;
         dop.ctime = ctime;
@@ -859,7 +1034,9 @@ function runTheFlow (dop /*dataOnPage*/) {
             }
           }
           if (data.pid != dop.pid) {
-            data.pid = "留下正確的pid:" + data.pid + "或" + dop.pid;
+            // data.pid = "留下正確的pid:" + data.pid + "或" + dop.pid;
+            // 20150610 決議先留 bigTable裡的id (TaiRON改d7後都會是 app scoped id)
+            data.pid = data.pid;
             data.pid_conflict = true;
           }
           else {
@@ -941,7 +1118,7 @@ function removePartialTag (str) {
 // $f(document).delegate("img.spotlight, img#fbPhotoImage", "hover", function(event) {
 $f(document).delegate("img#fbPhotoImage", "hover", function(event) {
 
-  var isCtrlPressed = event.ctrlKey;
+  isCtrlPressed = event.ctrlKey;
   if (!isCtrlPressed) {
     return;
   }
@@ -993,6 +1170,7 @@ $f(document).delegate("img#fbPhotoImage", "hover", function(event) {
       Tipped.create($f(tippedBody), "<div id='tip_"+oid+"'>Loading</div>", {onHide:unsetOid, target:'rigthtop', tooltip:'lefttop', fixed:true, closeButton: true, hideOn:false, showOn:false, closeButton:true});
     }
     Tipped.show($f(tippedBody));
+    $f( '.t_Tooltip' ).draggable();
 //    if ((xhr == undefined)||(xhr.state() != 'pending')||(oid != current_oid)) {
 
     var dop = {init: true};
@@ -1008,6 +1186,29 @@ $f(document).delegate("img#fbPhotoImage", "hover", function(event) {
     profSelected (dop);
 
 //    }
+  }
+});
+//*/
+
+/*
+$f(document).keydown(function (e) {
+  // console.log(e.keyCode);
+  var focused = $f(':focus');
+  console.log(focused);
+  console.log(focused.length);
+  if ((e.type=='keydown')&&(focused.length===0)) {
+    switch (e.keyCode) {
+      case 37:
+        if ($f('.photoPagePrevNav').length) {
+          $f('.photoPagePrevNav')[0].click();
+        }
+        break;
+      case 39:
+        if ($f('.photoPageNextNav').length) {
+          $f('.photoPageNextNav')[0].click();
+        }
+        break;
+    }
   }
 });
 //*/

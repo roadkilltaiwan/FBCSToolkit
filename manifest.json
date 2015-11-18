@@ -1,13 +1,13 @@
 {
   "name": "FB Crowdsourcing Toolkit",
-  "version": "1.0",
+  "version": "1.5",
   "manifest_version": 2,
   "background": { "scripts": ["background.js"] },
   "page_action": {
     "default_icon": "icon.png",
-    "default_title": "Fetch common names from text"
+    "default_title": "CRU (no D) functions and interface for TaiRON Framework"
   },
-  "permissions": ["tabs", "http://taibif.tw/", "http://lod.tw/", "http://roadkill.tw/"],
+  "permissions": ["tabs", "http://taibif.tw/", "https://roadkill.tw/"],
   "web_accessible_resources": [
     "images/ui-bg_highlight-soft_100_eeeeee_1x100.png",
     "images/ui-bg_glass_100_f6f6f6_1x400.png",
