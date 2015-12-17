@@ -109,7 +109,8 @@
 .t_Tooltip {
   margin: 0;
   padding: 0;
-  position: absolute;
+  /* position: absolute; */
+  position: fixed;
   overflow: hidden;
   background-color: transparent;
   -webkit-transition-property: opacity;

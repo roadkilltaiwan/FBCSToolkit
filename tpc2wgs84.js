@@ -1,20 +1,24 @@
 //check the validation of input data
 function getTai(oid){
-  var inputRe = /[A-HJ-Z]\d{4}[A-H][A-E]\d{2,4}/i;
+  var inputRe = /[A-HJ-Z]\d{4} ?[A-H][A-E]\d{2,4}/i;
   var taiSource = document.getElementById('xySource_'+oid).value;
-  taiSource = taiSource.toUpperCase();
+  taiSource = taiSource.toUpperCase().replace(' ', '');
   var digiChk = taiSource.length;
   var formatChk = taiSource.search(inputRe);
-  if ((digiChk != 9 && digiChk != 11) || formatChk ==- 1){
+
+  if (digiChk == 0) {
+    return false;
+  }
+  else if ((digiChk != 9 && digiChk != 11) || formatChk ==- 1) {
     alert ("座標格式錯誤，請重新檢查後再輸入一次!　");
-    return;
+    return false;
   }
   
   var Chr0 = getFirstChr(oid);
   
   if ( Chr0 == "Z" || Chr0 =="S"){
     alert ("很抱歉，本轉換式目前不適用於金門及馬祖地區!　");
-    return;
+    return false;
   }
   
   return taiSource;
@@ -24,6 +28,9 @@ function getTai(oid){
 function convertTai(oid){
 
   var taiGrid = getTai(oid);
+  
+  if (taiGrid === false) return;
+  
   //set the xy original coordinates by divisions
   var divStr = "A B C D E F G H J K L M N O P Q R T U V W X Y Z";
   divStr = divStr.replace(/ /g,"");
