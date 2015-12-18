@@ -133,26 +133,37 @@ var final_pos = 0;
 var pre = "";
 var post = "";
 
-
 var superX;
 var superY;
 
-var current_oid = 0;
+var current_oid = -1;
 
 $f = jQuery.noConflict();
 var cepath = chrome.i18n.getMessage("@@extension_id");
 
 function backToSpotlight() {
+  //$f(document).find("div#tip_"+current_oid).remove();
+  //message = '';
   current_oid = -1;
-  var targetURL = Tipped.atURL.replace('&theater', '');
-  var thumbFound = $f("a.uiMediaThumb[href='"+targetURL+"']");
+  clearInterval(shakeRibbon);
+  Tipped.lastTrigged = Tipped.toURL || Tipped.fromURL;
+  // 小工具關閉後(可能是因為送出，關閉，切換profile等行為)若未指明去哪，就哪也別去
+  if (!Tipped.toURL) return;
+  
+  // 送出照片時，如果是背景是社團照片牆，直接觸發縮圖的 click event ，否則就哪兒來哪兒去。
+  var operationURL = Tipped.toURL.replace('&theater', '');
+  var thumbFound = $f("a.uiMediaThumb[href='"+operationURL+"']");
   if (thumbFound.length > 0) {
     thumbFound.children().click();
   }
   else {
-    window.location.href = Tipped.atURL; 
+    window.location.href = Tipped.toURL; 
+    //window.location.replace(Tipped.toURL);
+    //document.location.replace(Tipped.toURL);
   }
-  Tipped.atURL = '';
+  
+  Tipped.toURL = '';
+  
 }
 
 function OpenInNewTab(url) {
@@ -164,12 +175,31 @@ var oPostURL = '';
 function getFBPostId (oid) {
 }
 
-
+var shakeRibbon;
 var bound = new Array();
 function triggerTipForm (oid, tf_tmp) {
-
+  var msg = $f("textarea[name='dummy']").val();
 //  $f("#profile_select_" + oid).html(profOpts);
 //  $f("#server_" + oid).html("//" + app_domain + "/" + app_context);
+
+//*
+  shakeRibbon = setInterval(function() {
+    if (!!document.getElementById('ascii_ribbonstreamer')) {
+      if (document.getElementById('ascii_ribbonstreamer').innerText == "-.,_,.-*'`\"*-.,_,.") {
+        document.getElementById('ascii_ribbonstreamer').innerText = "`\"*-.,_,.-*'`\"*-.,";
+      }
+      else if (document.getElementById('ascii_ribbonstreamer').innerText == "`\"*-.,_,.-*'`\"*-.,") {
+        document.getElementById('ascii_ribbonstreamer').innerText = "-*'`\"*-.,_,.-*'`\"*";
+      }
+      else if (document.getElementById('ascii_ribbonstreamer').innerText == "-*'`\"*-.,_,.-*'`\"*") {
+        document.getElementById('ascii_ribbonstreamer').innerText = "_,.-*'`\"*-.,_,.-*'";
+      }
+      else {
+        document.getElementById('ascii_ribbonstreamer').innerText = "-.,_,.-*'`\"*-.,_,.";
+      }
+    } 
+  }, 500);
+//*/  
   
   var tf = tf_tmp;
   if (bound.indexOf(oid)!=-1) {
@@ -264,7 +294,7 @@ function triggerTipForm (oid, tf_tmp) {
         // 當使用者是Tw RoadKill且授權方式不明時, 到官網抓資訊
         if (data.field_license_attribute && data.field_license_attribute.und && data.field_license_attribute.und[0]) {
           if (document.forms['tipForm_'+oid].authorName.value == 'Tw  Roadkill' || document.forms['tipForm_'+oid].authorName.value == 'Tw Roadkill') {
-            var authorName = message.match(/與(.+?)。讚/);
+            var authorName = msg.match(/與(.+?)。讚/);
             if (authorName[1]) {
               document.forms['tipForm_'+oid].authorName.value = authorName[1];
             }
@@ -315,7 +345,7 @@ function triggerTipForm (oid, tf_tmp) {
     }
 
     var nid = null;
-    var rkid_string = message.match(/\[roadkill\: *([0-9]+) *\]/);
+    var rkid_string = msg.match(/\[roadkill\: *([0-9]+) *\]/);
     if (rkid_string !== null) {
       nid = rkid_string[1];
     }
@@ -328,7 +358,7 @@ function triggerTipForm (oid, tf_tmp) {
         type: "HEAD",
         async: true,
         url: "//roadkill.tw/query?row=0&rowsperpage=15&nodetype[0]=occurrence&ft=fbid%3A"+oid+"%20verified%3A2",
-        success: function(message, txt, xhr) {
+        success: function(retMsg, txt, xhr) {
           nid = xhr.getResponseHeader('Link').match(/<(.+?)>/)[1].split('/').pop();
           if (!isNaN(Number(nid)) && nid !== null && nid !== 0) {
             fillDataFromTaiRON (nid);
@@ -399,6 +429,11 @@ function triggerTipForm (oid, tf_tmp) {
   });
 
   $f(document).delegate("#tipFormSubmit_" + oid, "click", function() {
+    
+    //Tipped.atURL = window.location.href.replace(/set=gm\.\d+/, 'set=o.'+ app_group);
+    // Submit 後的預設行為是哪裡來哪裡去
+    Tipped.toURL = Tipped.fromURL;
+    
     var submit_tf = this;
     var target = '//'+app_domain+'/'+app_context+'/api/api.updateBigTable.php';
     var formalizedDateTime = new Date(document.forms['tipForm_'+oid].ctime_int.value * 1000); // to milliseconds
@@ -456,26 +491,43 @@ function triggerTipForm (oid, tf_tmp) {
       //var ffss = 5566;
     }, 'json');
   });
+  
   $f(document).delegate("#tipFormClose_" + oid, "click", function() {
+    // 讓關閉小工具進入社團照片的輪迴
+    Tipped.toURL = Tipped.fromURL.replace(/set=gm\.\d+/, 'set=o.'+ app_group);
     current_oid = -1;
     //Tipped.hide($f(tf));
     Tipped.hide(this);
   });
-  $f(document).delegate("#tipFormCloseAndToGroupAlbum_" + oid, "click", function() {
-    Tipped.atURL = window.location.href.replace(/set=gm\.\d+/, 'set=o.'+ app_group);
+
+//*  
+  $f(document).delegate("#recallPhoto_" + oid, "click", function() {
+    var operationURL = Tipped.fromURL.replace('&theater', '');
+    var thumbFound = $f("a.uiMediaThumb[href='"+operationURL+"']");
+    if (thumbFound.length > 0) {
+      thumbFound.children().click();
+    }
+  });
+  
+//*/
+  
+  $f(document).delegate("#tipFormCloseAndSilence_" + oid, "click", function() {
+    Tipped.toURL = '';
     current_oid = -1;
     //Tipped.hide($f(tf));
     Tipped.hide(this);
   })
-      
+
 }
 
 var postId;
 var threadContent;
 var xhr;
-var post_message;
-var message;
-var tippedBody;
+
+// 這個全域變數是大洞, 要趁早處理
+// 目前好像是在trigger裡用到
+// var message;
+//var tippedBody;
 
 var exhr;
 var placeXHR;
@@ -486,17 +538,19 @@ var formData = {
 var placesHTML = {};
 
 function extractAndTip (message, tippedBody, meta, found) {
+    var msg = message;
+    var tpbdy = tippedBody;
     var sid = "#places_hierarchy_" + meta.oid;
     var oid = meta.oid;
     if (placesHTML[oid] === undefined) {
       if ((placeXHR == undefined)||(placeXHR.state() != 'pending')) {
         placeXHR = $f.post(
           "//"+app_domain+"/"+app_context+"/api/api.getNames.php",
-          {text:message, fastMode:0, withContext:'true'},
+          {text:msg, fastMode:0, withContext:'true'},
           function (data, textStatus, jqXHR) {
             var places = new Array();
             // var v5566 = data;
-            if (data.annotation.surfaceForm_pn !== undefined) {
+            if (!!data.annotation.surfaceForm_pn) {
               for (var i=0; i<data.annotation.surfaceForm_pn.length; i++) {
                 for (var j=0; j<data.annotation.surfaceForm_pn[i].resource.length; j++) {
                   var pr = data.annotation.surfaceForm_pn[i].resource[j];
@@ -551,7 +605,7 @@ function extractAndTip (message, tippedBody, meta, found) {
   $f.post(
     //'//lod.tw/cs/api.single_record.php',
     '//'+app_domain+'/'+app_context+'/api/api.single_record.php',
-    {message:message, group:app_group, username:meta.pid},
+    {message:msg, group:app_group, username:meta.pid},
     function (data, textStatus, jqXHR) {
 
       formData.oid = meta.oid;
@@ -588,7 +642,7 @@ function extractAndTip (message, tippedBody, meta, found) {
       var nftrid = data.trid;
       
       var nid = null;
-      var rkid_string = message.match(/\[roadkill\: *([0-9]+) *\]/);
+      var rkid_string = msg.match(/\[roadkill\: *([0-9]+) *\]/);
       if (rkid_string !== null) {
         nid = rkid_string[1];
       }
@@ -859,9 +913,11 @@ function extractAndTip (message, tippedBody, meta, found) {
       //var tipContent = "<form><table><tr><td>"+oid+"</td></tr><tr><td>"+authorName+"</td></tr><tr><td>"+authorId+"</td></tr><tr><td>"+data['match']+"</td></tr><tr><td>"+oid+"</td></tr><tr><td>"+oid+"</td></tr></table></form>";
       if (($f("#tipForm_"+meta.oid).html()==null)||(meta.oid != current_oid)) {
         var tipContent = "<form id='tipForm_"+formData.oid+"'><table>";
+        tipContent += "<tr><td colspan=6 style='height:3em;'><span class='very_notable'><a target='roadkilltw' href='https://roadkill.tw/login'>ლ</a>(　◔ิ<a target='roadkilltw' href='https://roadkill.tw/login'>ω</a>◔ิ)</span><span id='ascii_ribbonstreamer'>-.,_,.-*'`\"*-.,_,.-*'`\"*</span><a class='very_notable' target='roadkilltw' href='https://roadkill.tw/login'>↖☆煞氣a路殺社官網☆↘</a>記得先登入唷～^.<～</td></tr>";
+        tipContent += "<td><a target='_blank' href='https://www.facebook.com/groups/roadkilled/'>社團首頁</a></td><td><a target='_blank' href='https://www.facebook.com/groups/roadkilled/photos/'>社團相簿</a></td></tr>";
         tipContent += "<tr><td colspan=2><h3 style='color:white;'>Profile</h3></td><td><select id='profile_select_"+formData.oid+"' style='overflow-x:visible; width:auto;' name='profile' id='profOpts'>"+profOpts+"</select></td><td><div id='server_"+formData.oid+"'>"+app_domain+"/"+app_context+"</div></td></tr>";
         tipContent += "<tr><td colspan=2><h2 style='color:white;'>資料庫中"+title+"標記照片ID</h2></td><td><input name='oid' value='"+formData.oid+"'></td><td>特殊活動</td><td><select style='overflow-x:visible; width:auto;' name='activity'>"+formData.actOpts+"</select></td></tr>";
-        tipContent += "<tr><td colspan=2>路殺社ID</td><td><input "+tridcss+" name='trid' value='"+formData.trid+"'/></td><td><a id='to_tairon_link' target='_blank' href='https://roadkill.tw/occurrence/"+formData.trid+"'>TaiRON由此去</a></td><td><select style='overflow-x:visible; width:auto;' name='partner'>"+formData.partnerOpts+"</select></td></tr>";
+        tipContent += "<tr><td colspan=2>路殺社ID</td><td><input "+tridcss+" name='trid' value='"+formData.trid+"'/></td><td><a id='to_tairon_link' target='roadkilltw' href='https://roadkill.tw/occurrence/"+formData.trid+"'>TaiRON由此去</a></td><td><select style='overflow-x:visible; width:auto;' name='partner'>"+formData.partnerOpts+"</select></td></tr>";
         tipContent += "<tr><td colspan=2>上傳日期</td><td><input type='text' name='ctime' value='"+formData.ctime+"'></td>";
         tipContent += "<td>拍攝日期</td><td><input type='date' name='stime' value='"+formData.stime+"'></td><td></td><td></td></tr>";
         tipContent += "<tr><td colspan=2>上傳者ID</td><td><input "+pidcss+" name='authorId' value='"+formData.pid+"'></td>";
@@ -876,13 +932,13 @@ function extractAndTip (message, tippedBody, meta, found) {
         tipContent += "<tr><td colspan=2>授權方式</td><td><input "+authcss+" name='auth' value='"+(((formData.auth=="")&&(meta.hu != 1))?"未授權":formData.auth)+"'><td>姓名標示</td></td><td><input "+bycss+" name='by' value='"+((formData.by=="")?("未授權"+formData.pname):formData.by)+"'></td></tr>";
         tipContent += "<tr><td colspan=2>標本號</td><td><input "+spidcss+" name='spid' value='"+((formData.spid==undefined)?"":formData.spid)+"'/></td><td>採集編號</td><td><input "+coidcss+" name='coid' value='"+((formData.coid==undefined)?"":formData.coid)+"'/></td></tr>";
         tipContent += "<tr><td colspan=2>x</td><td><input "+xcss+" name='x' value='"+formData.lng.toString().replace(/'/, '&apos;')+"'/></td><td>y</td><td><input "+ycss+" name='y' value='"+formData.lat.toString().replace(/'/, '&apos;')+"'/></td></tr>";
-        tipContent += "<tr><td colspan=2>海拔高度</td><td><input name='altitude'/></td><td></td><td><div id='forceXY_"+formData.oid+"'><u><div id='fill_data_"+formData.oid+"'>"+fill_data_link_label+"</div></u></div><a id='mapLookup_"+formData.oid+"'>我要看地圖</a><div id='transformXY_"+formData.oid+"'><u>轉換管它什麼座標</u></div><a id='oPost_"+formData.oid+"'>原po呢????(敲碗)</a></td></tr>";
+        tipContent += "<tr><td colspan=2>海拔高度</td><td><input name='altitude'/></td><td></td><td><div class='text_button' id='forceXY_"+formData.oid+"'><div id='fill_data_"+formData.oid+"'>"+fill_data_link_label+"</div></div><a id='mapLookup_"+formData.oid+"'>我要看地圖</a><div class='text_button' id='transformXY_"+formData.oid+"'>轉換管它什麼座標</div><a id='oPost_"+formData.oid+"'>原po呢????(敲碗)</a></td></tr>";
         tipContent += "<tr><td colspan=2>地名階層</td><td colspan='3'><span id='places_hierarchy_wrap'><select style='overflow-x:visible; width:auto;' id='places_hierarchy_"+meta.oid+"'>"+placesHTML[meta.oid]+"</select></span></td></tr>";
         tipContent += "<tr><td colspan=2>地點縣市</td><td><input id='p1_"+meta.oid+"' name='p1' value='"+p1+"'/></td><td>地點鄉鎮</td><td><input id='p2_"+meta.oid+"' name='p2' value='"+p2+"'/></td></tr>";
         tipContent += "<tr><td colspan=2>地點其他</td><td><input id='p3_"+meta.oid+"' name='p3' value='"+p3.replace(/'/, '&apos;')+"'/></td><td>其它座標</td><td><input id='xySource_"+formData.oid+"' name='xySource'/></td></tr>";
         tipContent += "<tr><td colspan=2>備註</td><td colspan='3'><input style='width:97%;' name='remark' value='"+remark.replace(/</, '&lt;').replace(/>/, '&gt;')+"'/></td></tr>";
-        tipContent += "<tr><td colspan='6'><textarea name='dummy' style=\"width:97%;height:200px\" readonly>*****此區訊息僅供確認用, 不允許修改亦不會被傳送*****\n"+message+"</textarea></td></tr>";
-        tipContent += "<tr><td colspan=2/><td style='text-align:center;'><div id='tipFormSubmit_"+meta.oid+"'><b><u>送出</u></b></div></td><td style='text-align:center;'><div id='tipFormClose_"+meta.oid+"'><b><u>關閉不送</u></b></div></td><td style='text-align:center;'><div id='tipFormCloseAndToGroupAlbum_"+meta.oid+"'><b><u>傳送門</u></b></div></td></tr>";
+        tipContent += "<tr><td colspan='6'><textarea name='dummy' style=\"width:97%;height:200px\" readonly>*****此區訊息僅供確認用, 不允許修改亦不會被傳送*****\n"+msg+"</textarea></td></tr>";
+        tipContent += "<tr><td/><td style='text-align:center;'><div class='text_button' id='tipFormSubmit_"+meta.oid+"'>送出</div></td><td style='text-align:center;'><div class='text_button' id='tipFormClose_"+meta.oid+"'>進入輪迴</div></td><td style='text-align:center;'><div class='text_button' id='tipFormCloseAndSilence_"+meta.oid+"'>默默離開</div></td><td style='text-align:center;'><marquee behavior='alternate'><div class='text_button memory_loss' id='recallPhoto_"+meta.oid+"'>你是我的銀呀銀杏果</div></marquee></td><td/></tr>";
         tipContent += "</table>";
         tipContent += "<input type='hidden' name='tagged' value='"+formData.tagged+"' />";
         tipContent += "<input type='hidden' name='picture' value='"+meta.picture+"' />";
@@ -890,7 +946,7 @@ function extractAndTip (message, tippedBody, meta, found) {
         tipContent += "<input name='ctime_int' type='hidden' value='"+meta.ctime+"' />";
         // tipContent += "<input name='tagged' type='hidden' value='false' />";
         tipContent += "</form>";
-        //Tipped.create($f(tippedBody), tipContent, {target:'mouse', fixed:true, closeButton: true, hideOn:false, showOn:false, closeButton:true});
+        
         $f("div#tip_"+meta.oid).html(tipContent);
         $f("#places_hierarchy_"+meta.oid).change(
           function () {
@@ -916,14 +972,14 @@ function extractAndTip (message, tippedBody, meta, found) {
             var oid = this.id.split('_').pop();
             setProfile(this.options[this.selectedIndex].value);
             current_oid = -1;
-            //Tipped.hide($f(tippedBody));
+            
             Tipped.hideAll();
           }
         );
       }
 
-      Tipped.refresh($f(tippedBody), {target:'rigthtop', tooltip:'lefttop'});
-      triggerTipForm(meta.oid, tippedBody);
+      Tipped.refresh($f(tpbdy), {target:'rigthtop', tooltip:'lefttop'});
+      triggerTipForm(meta.oid, tpbdy);
       $f('#fill_data_' + meta.oid).html('補上XY,使用者與授權');
       current_oid = meta.oid;      
       
@@ -932,7 +988,7 @@ function extractAndTip (message, tippedBody, meta, found) {
     'json'
   );
 
-        //Tipped.show($f(tippedBody));
+
 }
 
 
@@ -947,7 +1003,6 @@ function runTheFlow (dop /*dataOnPage*/) {
       function(data, textStatus, jqXHR) {
         if (data) {
           //Do something with the data
-          //message = '5566bingo';
           data.ctime = dop.ctime;
           var found = true;
           if (data.picture != dop.picture) {
@@ -1049,6 +1104,7 @@ $f(document).delegate("div.stage img.spotlight, img#fbPhotoImage", "hover", func
   //alert (event.type);
   if (event.type=='mouseenter') {
     // check element and class
+
     var tagged_person = $f('.fbPhotoTagListTag a.taggee')[0];
     if (tagged_person !== undefined) {
       var tagged_person_name = '與' + tagged_person.innerText + '。讚';
@@ -1056,44 +1112,26 @@ $f(document).delegate("div.stage img.spotlight, img#fbPhotoImage", "hover", func
     else {
       var tagged_person_name = '';
     }
-    post_message = $f('.fbPhotosPhotoCaption')[0].innerText + ' ' + tagged_person_name + "\n";
-    messages_obj = $f('.UFICommentContent');
-    messages = [];
+    
+    var post_message = $f('.fbPhotosPhotoCaption')[0].innerText + ($f('.text_exposed_show')[0] ? $f('.text_exposed_show')[0].innerText : '') + '－' + tagged_person_name + "\n";
+    var messages_obj = $f('form.fbPhotosSnowliftFeedbackForm div.UFICommentContent');
+    var messages;
+    messages = []
     for (var mi in messages_obj) {
       if (messages_obj.hasOwnProperty(mi)) {
         messages.push(messages_obj[mi].innerText);
       }
     } 
+    var message = post_message + ';' + messages.join(';');
 
-//    message_tmp = removePartialTag($f('div.fbPhotoContributor').html()).replace(/<abbr[^<]+<\/abbr>/ig,"");
-//    message = message_tmp.replace(/<[^>]+>/ig,"");
-//    message = message.replace(/四處爬爬走(路殺社, Reptile Road Mortality)/, "");
-    message = post_message + ';' + messages.join(';');
-    //var oid = this.src.split('_')[1];
-    var oid = document.location.href.match(/fbid=(\d+)/)[1];
+    var oid = this.src.split('_')[1];
+    // var oid = document.location.href.match(/fbid=(\d+)/)[1];
     // var picture = this.src.split('?')[0];
     var picture = this.src;
     //var picture = ''; // 待補
     var author_a = $f('div#fbPhotoSnowliftAuthorName a');
     var pname = author_a[0].innerText;
     var pid = author_a.attr('data-hovercard').split('id=').pop()
-    /*
-    for (var a = 0; a < $f('abbr').length; a++) {
-      if ($f('abbr')[a].className == '') {
-        var ctime = $f("abbr")[a].attributes['data-utime'].value;
-        break;
-      }
-    }
-    */
-    
-    /*
-    var $tmpAbbr = $f(this).find('abbr');
-    var $meself = $f(this);
-    while ($tmpAbbr.length == 0) {
-      $meself = $meself.parent();
-      $tmpAbbr = $meself.find('abbr');
-    }
-    //*/
     
     var ctime = $f('#fbPhotoSnowliftTimestamp a abbr').attr('data-utime');
     var stime = null;
@@ -1108,19 +1146,21 @@ $f(document).delegate("div.stage img.spotlight, img#fbPhotoImage", "hover", func
     var lat = null;
     var lng = null;
 
-
-    //tippedBody = this;
     tippedBody = this;
     if ($f(document).find("div#tip_"+oid).length == 0) {
+      //message = '';
       $f(document).find("div#tip_"+oid).remove();
-      //Tipped.create($f(tippedBody), "<div id='tip_"+oid+"'>Loading</div>", {onHide:unsetOid, target:'rigthtop', tooltip:'lefttop', fixed:true, closeButton: true, hideOn:false, showOn:false, closeButton:true});
     }
-    Tipped.atURL = window.location.href;
+
+    var tmp_from_url = window.location.href;
+    Tipped.fromURL = tmp_from_url.replace(/fbid\=\d+/, 'fbid='+oid);
     Tipped.create($f(tippedBody), "<div id='tip_"+oid+"'>Loading</div>", {onHide:backToSpotlight, target:'rigthtop', tooltip:'lefttop', fixed:true, closeButton: true, hideOn:false, showOn:false, closeButton:true});
+    if (!!!Tipped.lastTrigged) {
+      Tipped.lastTrigged = Tipped.fromURL; 
+    }
     Tipped.show($f(tippedBody));
     
     $f( '.t_Tooltip' ).draggable();
-//    if ((xhr == undefined)||(xhr.state() != 'pending')||(oid != current_oid)) {
 
     var dop = {init: true};
     dop.oid = oid;
@@ -1133,9 +1173,49 @@ $f(document).delegate("div.stage img.spotlight, img#fbPhotoImage", "hover", func
     dop.go = true;
 
     profSelected (dop);
-
-//    }
+                    
   }
+});
+
+if (!Date.now) {
+    Date.now = function() { return new Date().getTime(); }
+}
+var ctrlAltFirst = false;
+var now = Date.now();
+var wait = false;
+$f(window).keydown(function (e) {
+  // console.log(e.keyCode);
+  if (e.ctrlKey && e.altKey) {
+    if (!ctrlAltFirst) {
+      ctrlAltFirst = true;
+      now = Date.now();
+      setTimeout(function(){ctrlAltFirst = false;}, 1000);
+    }
+    else {
+      if (wait) return;
+
+      wait = true;
+      setTimeout(function(){wait = false;}, 2000);
+
+      if (Date.now() - now < 1000) {
+        ctrlAltFirst = false;
+        console.log('memory triggered! //自嗨');
+        if (!!Tipped.lastTrigged) {
+          var operationURL = Tipped.lastTrigged.replace('&theater', '');
+          var thumbFound = $f("a.uiMediaThumb[href='"+operationURL+"']");
+          if (thumbFound.length > 0) {
+            thumbFound.children().click();
+          }
+          else {
+            window.location.href = Tipped.lastTrigged; 
+            //window.location.replace(Tipped.lastTrigged);
+            //document.location.replace(Tipped.lastTrigged);
+          }
+          
+        }
+      }
+    } 
+  }  
 });
 
 

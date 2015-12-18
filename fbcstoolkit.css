@@ -1,0 +1,24 @@
+img:hover {
+  cursor: pointer;
+}
+
+.text_button {
+  text-decoration: underline;
+  /* font-weight: bold; */
+}
+
+.text_button:hover {
+  cursor: pointer;
+}
+
+.memory_loss {
+  color: gold;
+}
+
+.very_notable {
+  font-size: 22px;
+}
+
+#ascii_ribbonstreamer {
+  font-family: monospace;
+}

@@ -19,7 +19,7 @@
     {
       "matches": ["*://www.facebook.com/media/*", "*://www.facebook.com/groups/*", "*://www.facebook.com/photo.php*"],
       "js": ["jquery.js", "spinners.min.js", "tipped.js", "content.js", "jquery-ui.min.js", "proj4js.js", "tmerc.js", "tpc2wgs84.js"],
-      "css": ["tipped.css", "jquery-ui.css"]
+      "css": ["tipped.css", "jquery-ui.css", "fbcstoolkit.css"]
     }
   ]
 }
