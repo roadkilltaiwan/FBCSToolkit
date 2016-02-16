@@ -20,6 +20,7 @@ var app_domain = "roadkill.tw";
 var app_group = 238918712815615;
 var app_context = ".";
 var isCtrlPressed = false;
+var lastTriggered = null;
 
 var actOpts = "<option value=''>無</option>"; // 這行是重要的開頭, 不要更動 
 actOpts += "<option value='2014端午節蛇類調查'>2014端午節蛇類調查</option>";
@@ -146,7 +147,7 @@ function backToSpotlight() {
   //message = '';
   current_oid = -1;
   clearInterval(shakeRibbon);
-  Tipped.lastTrigged = Tipped.toURL || Tipped.fromURL;
+  lastTriggered = Tipped.toURL || Tipped.fromURL;
   // 小工具關閉後(可能是因為送出，關閉，切換profile等行為)若未指明去哪，就哪也別去
   if (!Tipped.toURL) return;
   
@@ -1155,8 +1156,8 @@ $f(document).delegate("div.stage img.spotlight, img#fbPhotoImage", "hover", func
     var tmp_from_url = window.location.href;
     Tipped.fromURL = tmp_from_url.replace(/fbid\=\d+/, 'fbid='+oid);
     Tipped.create($f(tippedBody), "<div id='tip_"+oid+"'>Loading</div>", {onHide:backToSpotlight, target:'rigthtop', tooltip:'lefttop', fixed:true, closeButton: true, hideOn:false, showOn:false, closeButton:true});
-    if (!!!Tipped.lastTrigged) {
-      Tipped.lastTrigged = Tipped.fromURL; 
+    if (!!!lastTriggered) {
+      lastTriggered = Tipped.fromURL; 
     }
     Tipped.show($f(tippedBody));
     
@@ -1200,16 +1201,16 @@ $f(window).keydown(function (e) {
       if (Date.now() - now < 1000) {
         ctrlAltFirst = false;
         console.log('memory triggered! //自嗨');
-        if (!!Tipped.lastTrigged) {
-          var operationURL = Tipped.lastTrigged.replace('&theater', '');
+        if (!!lastTriggered) {
+          var operationURL = lastTriggered.replace('&theater', '');
           var thumbFound = $f("a.uiMediaThumb[href='"+operationURL+"']");
           if (thumbFound.length > 0) {
             thumbFound.children().click();
           }
           else {
-            window.location.href = Tipped.lastTrigged; 
-            //window.location.replace(Tipped.lastTrigged);
-            //document.location.replace(Tipped.lastTrigged);
+            window.location.href = lastTriggered; 
+            //window.location.replace(lastTriggered);
+            //document.location.replace(lastTriggered);
           }
           
         }
